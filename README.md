@@ -4,12 +4,16 @@
 * Due Tuesday 2016/5/24 (last day of exam period) at 9am.
 * You must fork this repository as described in the [HW Submission 
 Exercise](https://github.com/Middlebury-Data-Science/HW-0#hw-submission-exercise).
-* Ensure all data files are in the folder `files`. So for example, if you have a
-file `data.csv` in the `files` folder you want to load, you need to use
+* Ensure all data files and CSV files are in the folder `files`. So for example,
+if you have a file `data.csv` in the `files` folder you want to load, you need
+to use
 `read.csv("files/data.csv")` and not `read.csv("data.csv")`.
 * Fill in the project details below.
-* Delete this section.
+* Delete everything in this file before the section "Project Details".
 * Push/commit **all files necessary** for me to reproduce your final report.
+
+
+#### Repository README Cover Page
 
 Any good repository on GitHub will have an informative cover page. It is an
 advertisement of your work and should give basic instructions on how to use
@@ -22,9 +26,11 @@ on the repository cover page. For example:
 The way you will create your `README.md` is via `README.Rmd`:
 
 * **DO NOT EDIT** `README.md`
-* Rather, edit `README.Rmd`, which will run any R code, and then output the file
-`README.md`.
+* Rather, edit `README.Rmd` and then Knit it. An updated `README.md` file will
+be outputted.
 * When you push/commit `README.md`, it will show up as your repo's cover page.
+
+
 
 
 
@@ -34,20 +40,5 @@ The way you will create your `README.md` is via `README.Rmd`:
 * Project title:
 * Abstract:
 
-
---------------
- speed   dist 
-------- ------
-   4      2   
-
-   4      10  
-
-   7      4   
-
-   7      22  
-
-   8      16  
-
-   9      10  
---------------
+![](README_files/figure-html/unnamed-chunk-1-1.png)
 
