@@ -35,12 +35,19 @@ The way you will create your `README.md` is via `README.Rmd`:
 * Abstract:
 
 
- speed   dist
-------  -----
-     4      2
-     4     10
-     7      4
-     7     22
-     8     16
-     9     10
+--------------
+ speed   dist 
+------- ------
+   4      2   
+
+   4      10  
+
+   7      4   
+
+   7      22  
+
+   8      16  
+
+   9      10  
+--------------
 

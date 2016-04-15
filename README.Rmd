@@ -40,7 +40,7 @@ The way you will create your `README.md` is via `README.Rmd`:
 * Abstract:
 
 ```{r, echo=FALSE}
-suppressPackageStartupMessages(library(knitr))
-kable(head(cars))
+suppressPackageStartupMessages(library(pander))
+pander(head(cars))
 ```
 
