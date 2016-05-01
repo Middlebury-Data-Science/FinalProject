@@ -41,20 +41,146 @@ be outputted.
 
 # Project Details
 
-* Name: 
-* Project title:
-* Abstract:
+* Name: Christian Lehner
+* Project title: The Good Ol' Days - Mininum Wage, Policy, and CPI in the US
+* Abstract: I am looking into the history of federal mininum wage a tbc..
 
 ```{r, echo=FALSE}
-# Example of R output
-suppressPackageStartupMessages(library(ggplot2))
+
 suppressPackageStartupMessages(library(dplyr))
-set.seed(76)
-small <- sample_n(diamonds, 1000) 
-ggplot(data=diamonds, aes(x=carat,y=price,colour=cut)) +
-  geom_point() +
-  scale_y_log10() + 
-  facet_wrap(~cut) +
-  ggtitle("First example")
+suppressPackageStartupMessages(library(ggplot2))
+suppressPackageStartupMessages(library(lubridate))
+suppressPackageStartupMessages(library(Quandl))
+suppressPackageStartupMessages(library(Rmisc))
+suppressPackageStartupMessages(library(scales))
+suppressPackageStartupMessages(library(plyr))
+suppressPackageStartupMessages(library(rvest))
+suppressPackageStartupMessages(library(stringr))
 ```
+
+```{r, echo=FALSE}
+##############################################
+wage <- read.csv("ECPI-WAGE_AD.csv", header = TRUE) %>% tbl_df
+#https://www.quandl.com/data/ECPI/WAGE_AD-Real-value-of-the-minimum-wage-1960-2011
+wage$Year <- as.Date(wage$Year)
+
+#possible : https://www.quandl.com/data/FRED/FEDMINNFRWG-Federal-Minimum-Hourly-Wage-for-Nonfarm-Workers-for-the-United-States  
+#https://www.quandl.com/data/FRBC/USINFL-U-S-Inflation
+
+cpi <- read.csv("CPI.csv", header = TRUE) %>% tbl_df 
+
+#OECD (2016), Inflation (CPI) (indicator). doi: 10.1787/eee82e6e-en (Accessed on 30 April 2016)
+#https://data.oecd.org/price/inflation-cpi.htm
+#http://www.epi.org/publication/bp177/
+
+cpi <- filter(cpi, LOCATION == "USA")
+cpi <- rename(cpi, c("TIME"="Year", "Value"="CPI"))
+
+webpage <- "https://www.dol.gov/featured/minimum-wage/chart1"
+
+nwage <- webpage %>%
+  read_html() %>% 
+  html_nodes("table") %>% 
+  .[[1]] %>% 
+  html_table()
+
+nwage <- rename(nwage, c("Nominal Min Wage"="nomwage", "Minimum Wage in 2012 Dollars"="realwage"))  
+nwage <- filter(nwage, nwage$Year >= 1938)
+nmage <- na.omit(nwage)
+
+
+wage_cpi <- left_join(cpi, nwage, by = "Year") %>% 
+  select(Year, CPI, nomwage, realwage) %>% 
+  mutate(nomwage=
+    gsub('\\$', '', c(nomwage)),
+  realwage=
+    gsub('\\$', '', c(realwage)))
+
+wage_cpi$Year <- ymd(wage_cpi$Year
+
+wage_cpi$CPI <- as.numeric(wage_cpi$CPI)
+wage_cpi$nomwage <- as.numeric(wage_cpi$nomwage)
+wage_cpi$realwage <- as.numeric(wage_cpi$realwage)
+
+
+wage_cpi <- wage_cpi %>% 
+  mutate(keeping_up = NA)
+
+
+
+wage_cpi <- wage_cpi %>% 
+  mutate(keeping_up = NA)
+n <- 1
+repeat {
+  if (is.na(wage_cpi$keeping_up[1])){
+    wage_cpi$keeping_up[1] <- 1
+  } else if(is.na(wage_cpi$keeping_up[n+1])){
+    wage_cpi$keeping_up[n+1] <- (wage_cpi$keeping_up[n]*(1+wage_cpi$CPI[n]/100))
+    n<-n+1}
+  if (n == 60){
+    break
+  }
+}
+
+wage_cpi <- wage_cpi %>% 
+  mutate(keeping_up2 = NA)
+n <- 1
+repeat {
+  if (is.na(wage_cpi$keeping_up2[1])){
+    wage_cpi$keeping_up2[1] <- 8.29
+  } else if(is.na(wage_cpi$keeping_up2[n+1])){
+    wage_cpi$keeping_up2[n+1] <- (wage_cpi$keeping_up2[n]*(1+wage_cpi$CPI[n]/100))
+    n<-n+1}
+  if (n == 60){
+    break
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### COULDN'T figure out how to do this with dpylr(lag leads etc) after a few hours! 
+### Essentially I am trying basically show using the nominal wage should be adjusted each year to CPI,
+##although have 
+wage_cpi$year
+
+ggplot(wage_cpi) +
+  geom_line(aes(y=realwage, x=Year),color="blue") 
+  
+ggplot(wage_cpi) +
+  geom_line(aes(y=nomwage, x=Year),color="blue") +
+  geom_line(aes(y=keeping_up,x=Year),color="red") +
+  geom_line(aes(y=realwage, x=Year),color="orange")
+
+
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
