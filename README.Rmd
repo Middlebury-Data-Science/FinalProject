@@ -188,12 +188,13 @@ plot1 <- ggplot(data=wage_cpi) +
 
 ```{r, echo=FALSE}
 plot1
+```
+```{r, echo=FALSE}
 ggplotly(plot1)
 ```
 
 >The geom_step is representative of the federal mininum wage, the longer the step the longer congress hadn't adjusted 
-wages. Real Mininum wage is shown in purple in 2012 dollars, the CPI is based from 1982-1984 = 100
-test
+wages. Real Mininum wage is shown in purple in 2012 dollars, the CPI is based from 1982-1984 = 100.
 >This is supposed to be plotly output as seen on rpubs.. but I can seem to get it to work after trying for a while.  
 
 
