@@ -46,7 +46,6 @@ be outputted.
 * Abstract: I am looking into the history of federal mininum wage a tbc..
 
 ```{r, echo=FALSE}
-
 suppressPackageStartupMessages(library(dplyr))
 suppressPackageStartupMessages(library(ggplot2))
 suppressPackageStartupMessages(library(lubridate))
@@ -161,8 +160,6 @@ repeat {
   }
 }
 
-
-
 ```
 
 >COULDN'T figure out how to do this with dpylr(lag leads etc) after a few hours! 
@@ -171,14 +168,8 @@ and depending on which year we index the wage, the nominal wage drastically chan
 
 
 ```{r, echo=FALSE}
-
-
-
-
-
-
 set.seed(100)
-plot1<- ggplot(data=wage_cpi) +
+plot1 <- ggplot(data=wage_cpi) +
   geom_step(aes(Year, nomwage), color="black") +
   geom_line(aes(Year, indexed1938), color="red") +
   geom_line(aes(Year, indexed1950), color="blue") +
@@ -192,15 +183,20 @@ plot1<- ggplot(data=wage_cpi) +
   scale_x_continuous(breaks=c(1938,1940,1950,1960,1968,1970,1980,1990,2000,2010,2012)) +
   labs(title="Indexing the Nominal Mininum Wage at Different Years") +
   labs(ylab="Wage")
-  
-  
+
+```
+
+```{r, echo=FALSE}
+plot1
 ggplotly(plot1)
-
-
 ```
 
 >The geom_step is representative of the federal mininum wage, the longer the step the longer congress hadn't adjusted 
 wages. Real Mininum wage is shown in purple in 2012 dollars, the CPI is based from 1982-1984 = 100
+test
+>This is supposed to be plotly output as seen on rpubs.. but I can seem to get it to work after trying for a while.  
+
+
 
 ```{r, echo=TRUE}
 # wage_cpi <- wage_cpi %>% 
