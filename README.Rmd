@@ -43,7 +43,7 @@ be outputted.
 
 * Name: Christian Lehner
 * Project title: The Good Ol' Days - Mininum Wage, Policy, and CPI in the US
-* Abstract: I am looking into the history of federal mininum wage a tbc..
+* Abstract: I am looking into the history of federal mininum wage, tbc..
 
 ```{r, echo=FALSE}
 suppressPackageStartupMessages(library(dplyr))
@@ -63,27 +63,26 @@ suppressPackageStartupMessages(library(plotly))
 
 
 ```{r, echo=FALSE}
-wage <- read.csv("ECPI-WAGE_AD.csv", header = TRUE) %>% tbl_df
+wage <- read.csv("data/ECPI-WAGE_AD.csv", header = TRUE) %>% tbl_df
 #https://www.quandl.com/data/ECPI/WAGE_AD-Real-value-of-the-minimum-wage-1960-2011
 wage$Year <- as.Date(wage$Year)
 
-wage <- wage[order(wage$Year),] 
+wage <- wage[order(wage$Year),]
 
 #possible : https://www.quandl.com/data/FRED/FEDMINNFRWG-Federal-Minimum-Hourly-Wage-for-Nonfarm-Workers-for-the-United-States  
 #https://www.quandl.com/data/FRBC/USINFL-U-S-Inflation
 
-# cpi <- read.csv("CPI.csv", header = TRUE) %>% tbl_df 
+# cpi <- read.csv("data/CPI.csv", header = TRUE) %>% tbl_df 
 # 
 # #OECD (2016), Inflation (CPI) (indicator). doi: 10.1787/eee82e6e-en (Accessed on 30 April 2016)
 # #https://data.oecd.org/price/inflation-cpi.htm
 # #http://www.epi.org/publication/bp177/
 # #2010 base year
-# 
 # cpi <- filter(cpi, LOCATION == "USA")
 # cpi <- rename(cpi, c("TIME"="Year", "Value"="CPI"))
 
-cpi_annual <- read.csv("CPI2.csv", header = TRUE) %>% tbl_df 
-cpi_percent <- read.csv("CPI%.csv", header = TRUE) %>% tbl_df
+cpi_annual <- read.csv("data/CPI2.csv", header = TRUE) %>% tbl_df
+cpi_percent <- read.csv("data/CPI%.csv", header = TRUE) %>% tbl_df
 cpi_percent <- rename(cpi_percent, c("Annual"="Change"))
 cpi <- left_join(cpi_percent,cpi_annual, by = "Year")
 #http://data.bls.gov/pdq/SurveyOutputServlet
@@ -93,17 +92,17 @@ webpage <- "https://www.dol.gov/featured/minimum-wage/chart1"
 #real in 2012 dollars
 
 nwage <- webpage %>%
-  read_html() %>% 
-  html_nodes("table") %>% 
-  .[[1]] %>% 
+  read_html() %>%
+  html_nodes("table") %>%
+  .[[1]] %>%
   html_table()
 
-nwage <- rename(nwage, c("Nominal Min Wage"="nomwage", "Minimum Wage in 2012 Dollars"="realwage"))  
+nwage <- rename(nwage, c("Nominal Min Wage"="nomwage", "Minimum Wage in 2012 Dollars"="realwage"))
 nwage <- filter(nwage, nwage$Year >= 1938)
 nmage <- na.omit(nwage)
 #renaming, filtering and omitting NA
-wage_cpi <- left_join(nwage, cpi, by = "Year") %>% 
-  select(Year, Change, Annual, nomwage, realwage) %>% 
+wage_cpi <- left_join(nwage, cpi, by = "Year") %>%
+  select(Year, Change, Annual, nomwage, realwage) %>%
   mutate(nomwage=
     gsub('\\$', '', c(nomwage)),
   realwage=
@@ -114,11 +113,11 @@ wage_cpi$nomwage <- as.numeric(wage_cpi$nomwage)
 wage_cpi$realwage <- as.numeric(wage_cpi$realwage)
 #changing to numerical
 
-wage_cpi <- wage_cpi %>% 
+wage_cpi <- wage_cpi %>%
   mutate(keeping_up = NA)
 
 
-wage_cpi <- wage_cpi %>% 
+wage_cpi <- wage_cpi %>%
   mutate(indexed1938 = NA)
 n <- 1
 repeat {
@@ -132,7 +131,7 @@ repeat {
   }
 }
 
-wage_cpi <- wage_cpi %>% 
+wage_cpi <- wage_cpi %>%
   mutate(indexed1950 = NA)
 n <- 13
 repeat {
@@ -146,7 +145,7 @@ repeat {
   }
 }
 
-wage_cpi <- wage_cpi %>% 
+wage_cpi <- wage_cpi %>%
   mutate(indexed1968 = NA)
 n <- 31
 repeat {
@@ -163,8 +162,7 @@ repeat {
 ```
 
 >COULDN'T figure out how to do this with dpylr(lag leads etc) after a few hours! 
-Essentially I am trying basically show using the nominal wage should be adjusted each year to CPI,
-and depending on which year we index the wage, the nominal wage drastically changes
+Essentially I am trying basically show using the nominal wage should be adjusted each year to CPI, and depending on which year we index the wage, the nominal wage drastically changes.
 
 
 ```{r, echo=FALSE}
@@ -190,12 +188,13 @@ plot1 <- ggplot(data=wage_cpi) +
 plot1
 ```
 ```{r, echo=FALSE}
-ggplotly(plot1)
+#ggplotly(plot1)
 ```
 
 >The geom_step is representative of the federal mininum wage, the longer the step the longer congress hadn't adjusted 
 wages. Real Mininum wage is shown in purple in 2012 dollars, the CPI is based from 1982-1984 = 100.
->This is supposed to be plotly output as seen on rpubs.. but I can seem to get it to work after trying for a while.  
+>This is supposed to be plotly output as seen on rpubs.. but I can seem to get it to work after trying for a while.
+>Also thinking about logarithmic scale.
 
 
 
@@ -217,7 +216,7 @@ wages. Real Mininum wage is shown in purple in 2012 dollars, the CPI is based fr
 
 
 
-# con <- read.csv("congress-terms.csv", header = TRUE) %>% tbl_df
+# con <- read.csv("data/congress-terms.csv", header = TRUE) %>% tbl_df
 # #https://github.com/fivethirtyeight/data/tree/master/congress-age
 # con <- subset(con, party %in% c('R','D') & chamber == "senate")
 # View(con)
