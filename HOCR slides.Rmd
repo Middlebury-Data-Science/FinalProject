@@ -1,0 +1,495 @@
+---
+title: "HOCR Slides"
+author: "Phil Hoxie"
+date: "May 16, 2016"
+output: ioslides_presentation
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+```{r, results='hide', message=FALSE, error=FALSE}
+## Packages
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+library(lubridate)
+library(leaflet)
+library(ggmap)
+library(maps)
+library(maptools)
+library(plotly)
+library(rgdal)
+library(rgeos)
+library(scales)
+library(rvest)
+library(stringr)
+library(knitr)
+## Data
+
+athletes <- read.csv(file = "data/athletes_hocr.csv", header = TRUE)
+clubs <- read.csv(file = "data/clubs_hocr.csv", header = TRUE)
+events <- read.csv(file = "data/events_hocr.csv", header = TRUE)
+races <- read.csv(file = "data/races_hocr.csv", header = TRUE)
+results <- read.csv(file = "data/results.entry.csv", header = TRUE, stringsAsFactors = FALSE)
+
+race.details <- left_join(events, races, by = "event_id")
+
+markers <- read.csv("data/markers.csv", header = TRUE, stringsAsFactors = FALSE)
+
+penalty.markers <- read.csv("data/penalty.markers.csv", header = TRUE, stringsAsFactors = FALSE)
+
+## results by race
+
+## Men
+m.alum.8 <- read.csv(file = "data/m.alum.8.csv", header = TRUE)
+m.chmp.4 <- read.csv(file = "data/m.chmp.4.csv", header = TRUE)
+m.chmp.8 <- read.csv(file = "data/m.chmp.8.csv", header = TRUE)
+m.club.4 <- read.csv(file = "data/m.chmp.4.csv", header = TRUE)
+m.club.8 <- read.csv(file = "data/m.chmp.8.csv", header = TRUE)
+m.coll.4 <- read.csv(file = "data/m.college.4.csv", header = TRUE)
+m.coll.8 <- read.csv(file = "data/m.college.8.csv", header = TRUE)
+m.lght.4 <- read.csv(file = "data/m.light.4.csv", header = TRUE)
+m.lght.8 <- read.csv(file = "data/m.light.8.csv", header = TRUE)
+
+## Women
+
+w.alum.8 <- read.csv(file = "data/w.alum.8.csv", header = TRUE)
+w.chmp.4 <- read.csv(file = "data/w.chmp.4.csv", header = TRUE)
+w.chmp.8 <- read.csv(file = "data/w.chmp.8.csv", header = TRUE)
+w.club.4 <- read.csv(file = "data/w.chmp.4.csv", header = TRUE)
+w.club.8 <- read.csv(file = "data/w.chmp.8.csv", header = TRUE)
+w.coll.4 <- read.csv(file = "data/w.college.4.csv", header = TRUE)
+w.coll.8 <- read.csv(file = "data/w.college.8.csv", header = TRUE)
+w.lght.4 <- read.csv(file = "data/w.light.4.csv", header = TRUE)
+w.lght.8 <- read.csv(file = "data/w.light.8.csv", header = TRUE)
+
+## Master results sheet
+
+## First we must delete the extra columns and standardize the column names
+names(m.alum.8)
+m.alum.8 <- m.alum.8 %>% 
+  select(event_id, place, status, 
+         lane_bow, club, crew, 
+         rower, penalty, penalty_desc, 
+         time_official, delta, percent, 
+         split1, cum1, split2, cum2, 
+         split3, cum3, split4, cum4)
+
+names(w.alum.8)
+w.alum.8 <- w.alum.8 %>% 
+  select(event_id, place, status, 
+         lane_bow, club, crew, 
+         rower, penalty, penalty_desc, 
+         time_official, delta, percent, 
+         X.18, cum1, split2, cum2, 
+         split3, cum3, splitF, cum4)
+
+w.alum.8 <- w.alum.8 %>% 
+  rename(split1 = X.18, split4 = splitF)
+
+names(m.chmp.4)
+m.chmp.4 <- m.chmp.4 %>% 
+  select(event_id, place, status, 
+         lane_bow, club, crew, 
+         rower, penalty, penalty_desc, 
+         time_official, delta, percent, 
+         split1, cum1, split2, cum2, 
+         split3, cum3, splitF, cum4)
+m.chmp.4 <- m.chmp.4 %>% 
+  rename(split4 = splitF)
+
+names(w.chmp.4)
+w.chmp.4 <- w.chmp.4 %>% 
+  select(event_id, place, status, 
+         lane_bow, club, crew, 
+         rower, penalty, penalty_desc, 
+         time_official, delta, percent, 
+         split1, cum1, split2, cum2, 
+         split3, cum3, splitF, cum4)
+w.chmp.4 <- w.chmp.4 %>% 
+  rename(split4 = splitF)
+
+names(m.chmp.8)
+m.chmp.8 <- m.chmp.8 %>% 
+  select(event_id, place, status, 
+         lane_bow, club, crew, 
+         rower, penalty, penalty_desc, 
+         time_official, delta, percent, 
+         split1, cum1, split2, cum2, 
+         split3, cum3, splitF, cum4)
+m.chmp.8 <- m.chmp.8 %>% 
+  rename(split4 = splitF)
+
+names(w.chmp.8)
+w.chmp.8 <- w.chmp.8 %>% 
+  select(event_id, place, status, 
+         lane_bow, club, crew, 
+         rower, penalty, penalty_desc, 
+         time_official, delta, percent, 
+         split1, cum1, split2, cum2, 
+         split3, cum3, splitF, cum4)
+w.chmp.8 <- w.chmp.8 %>% 
+  rename(split4 = splitF)
+
+names(m.club.4)
+m.club.4 <- m.club.4 %>% 
+  select(event_id, place, status, 
+         lane_bow, club, crew, 
+         rower, penalty, penalty_desc, 
+         time_official, delta, percent, 
+         split1, cum1, split2, cum2, 
+         split3, cum3, splitF, cum4)
+m.club.4 <- m.club.4 %>% 
+  rename(split4 = splitF)
+
+names(w.club.4)
+w.club.4 <- w.club.4 %>% 
+  select(event_id, place, status, 
+         lane_bow, club, crew, 
+         rower, penalty, penalty_desc, 
+         time_official, delta, percent, 
+         split1, cum1, split2, cum2, 
+         split3, cum3, splitF, cum4)
+w.club.4 <- w.club.4 %>% 
+  rename(split4 = splitF)
+
+names(m.club.8)
+m.club.8 <- m.club.8 %>% 
+  select(event_id, place, status, 
+         lane_bow, club, crew, 
+         rower, penalty, penalty_desc, 
+         time_official, delta, percent, 
+         split1, cum1, split2, cum2, 
+         split3, cum3, splitF, cum4)
+m.club.8 <- m.club.8 %>% 
+  rename(split4 = splitF)
+
+names(w.club.8)
+w.club.8 <- w.club.8 %>% 
+  select(event_id, place, status, 
+         lane_bow, club, crew, 
+         rower, penalty, penalty_desc, 
+         time_official, delta, percent, 
+         split1, cum1, split2, cum2, 
+         split3, cum3, splitF, cum4)
+w.club.8 <- w.club.8 %>% 
+  rename(split4 = splitF)
+
+names(m.coll.4)
+m.coll.4 <- m.coll.4 %>% 
+  select(event_id, place, status, 
+         lane_bow, club, crew, 
+         rower, penalty, penalty_desc, 
+         time_official, delta, percent, 
+         split1, cum1, split2, cum2, 
+         split3, cum3, splitF, cum4)
+m.coll.4 <- m.coll.4 %>% 
+  rename(split4 = splitF)
+
+names(w.coll.4)
+w.coll.4 <- w.coll.4 %>% 
+  select(event_id, place, status, 
+         lane_bow, club, crew, 
+         rower, penalty, penalty_desc, 
+         time_official, delta, percent, 
+         split1, cum1, split2, cum2, 
+         split3, cum3, splitF, cum4)
+w.coll.4 <- w.coll.4 %>% 
+  rename(split4 = splitF)
+
+m.coll.8 <- m.coll.8 %>% 
+  select(event_id, place, status, 
+         lane_bow, club, crew, 
+         rower, penalty, penalty_desc, 
+         time_official, delta, percent, 
+         split1, cum1, split2, cum2, 
+         split3, cum3, splitF, cum4)
+m.coll.8 <- m.coll.8 %>% 
+  rename(split4 = splitF)
+
+w.coll.8 <- w.coll.8 %>% 
+  select(event_id, place, status, 
+         lane_bow, club, crew, 
+         rower, penalty, penalty_desc, 
+         time_official, delta, percent, 
+         split1, cum1, split2, cum2, 
+         split3, cum3, splitF, cum4)
+w.coll.8 <- w.coll.8 %>% 
+  rename(split4 = splitF)
+
+m.lght.4 <- m.lght.4 %>% 
+  select(event_id, place, status, 
+         lane_bow, club, crew, 
+         rower, penalty, penalty_desc, 
+         time_official, delta, percent, 
+         split1, cum1, split2, cum2, 
+         split3, cum3, splitF, cum4)
+m.lght.4 <- m.lght.4 %>% 
+  rename(split4 = splitF)
+
+w.lght.4 <- w.lght.4 %>% 
+  select(event_id, place, status, 
+         lane_bow, club, crew, 
+         rower, penalty, penalty_desc, 
+         time_official, delta, percent, 
+         split1, cum1, split2, cum2, 
+         split3, cum3, splitF, cum4)
+w.lght.4 <- w.lght.4 %>% 
+  rename(split4 = splitF)
+
+m.lght.8 <- m.lght.8 %>% 
+  select(event_id, place, status, 
+         lane_bow, club, crew, 
+         rower, penalty, penalty_desc, 
+         time_official, delta, percent, 
+         split1, cum1, split2, cum2, 
+         split3, cum3, splitF, cum4)
+m.lght.8 <- m.lght.8 %>% 
+  rename(split4 = splitF)
+
+w.lght.8 <- w.lght.8 %>% 
+  select(event_id, place, status, 
+         lane_bow, club, crew, 
+         rower, penalty, penalty_desc, 
+         time_official, delta, percent, 
+         split1, cum1, split2, cum2, 
+         split3, cum3, splitF, cum4)
+w.lght.8 <- w.lght.8 %>% 
+  rename(split4 = splitF)
+
+## let's make the master results sheet
+
+regatta <- bind_rows(list(m.alum.8, w.alum.8, 
+                          m.chmp.4, w.chmp.4, 
+                          m.chmp.8, w.chmp.8,
+                          m.club.4, w.club.4,
+                          m.club.8, w.club.8,
+                          m.coll.4, w.coll.4,
+                          m.coll.8, w.coll.8,
+                          m.lght.4, w.lght.4,
+                          m.lght.8, w.lght.8))
+
+regatta <- regatta %>% 
+  select(event_id, place, status, 
+         lane_bow, club, 
+         rower, penalty, penalty_desc, 
+         time_official, delta, percent, 
+         split1, cum1, split2, cum2, 
+         split3, cum3, split4, cum4)
+
+## Excel created some extra rows, lets drop them
+regatta <- regatta %>% 
+  mutate(event_id = as.character(event_id))
+regatta <- regatta %>%  
+  filter(!is.na(event_id))
+
+## here is the final sheet
+regatta.full <- left_join(regatta, race.details, by = "event_id")
+
+## athletes
+
+## US cities from http://simplemaps.com/resources/us-cities-data 
+## lat long from http://www.latlong.net/
+
+cities <- read.csv(file = "data/cities.csv", head=TRUE, stringsAsFactors = FALSE)
+
+## state abbreviations from: http://www.infoplease.com/ipa/A0110468.html
+
+abbrev <- read.csv(file = "data/state.abbreviations.csv", header = TRUE, stringsAsFactors = FALSE)
+
+clean_text <- function(text){
+  text <- gsub("[^[:alnum:]]", "", text)
+  text <- gsub(" ", "", text)
+  text <- tolower(text)
+  return(text)
+}
+
+cities <- cities %>% 
+  mutate(state.clean = clean_text(state), 
+         city.clean = clean_text(city))
+
+cities.tidy <- cities %>% 
+  mutate(full.name = paste(city.clean,state.clean, sep = ", "))
+
+cities.tidy <- cities.tidy %>% 
+  distinct(full.name)
+
+athletes <- athletes %>% 
+  mutate(state.clean = clean_text(state.province), 
+         city.clean = clean_text(city))
+
+athletes.us <- athletes %>% 
+  filter(country=="US") %>% 
+  group_by(state.clean, city.clean, city, state.province) %>% 
+  tally()
+## drop 75 athletes who did not report their city
+athletes.us <- athletes.us %>% 
+  filter(city!="")
+
+## state abbreviations
+
+abbrev <- abbrev %>% 
+  mutate(state.clean = clean_text(State), 
+         code = clean_text(Postal.Code))
+
+athletes.us <- left_join(athletes.us, abbrev, by=c("state.clean"))
+
+
+athletes <- athletes %>% 
+  mutate(club = as.character(club), 
+         city = as.character(city), 
+         state.province = as.character(state.province),
+         country = as.character(country))
+
+clubs.affiliated <- clubs %>% 
+  filter(club != "Unaffiliated (usa)")
+
+clubs.by.state <- clubs.affiliated %>% 
+  filter(federation=="USA") %>% 
+  group_by(state.province) %>% 
+  tally() %>% 
+  arrange(desc(n))
+clubs.by.state <- clubs.by.state %>% 
+  rename(clubs = n)
+
+athletes.by.state <- athletes %>% 
+  filter(country=="US") %>% 
+  group_by(state.province) %>% 
+  tally() %>% 
+  arrange(desc(n))
+
+athletes.by.state <- athletes.by.state %>% 
+  rename(athletes = n)
+
+
+participation <- left_join(clubs.by.state, athletes.by.state, by = "state.province")
+participation <- participation %>% 
+  mutate(hover = paste("clubs: ", clubs, "<br>",
+                       "athletes: ", athletes))
+participation <- participation %>% 
+  mutate(state.clean = clean_text(state.province))
+participation <- left_join(participation, abbrev, by = c("state.clean"="state.clean"))
+
+athletes.cities <- left_join(athletes.us, cities.tidy, 
+                             by = c("code" = "state.clean", "city.clean" = "city.clean"))
+
+```
+
+## Crash Course in Rowing Terms
+
+Boat Types:
+Coxed
+-4+
+-8+
+Uncoxed
+-Single
+-Double
+-Quad
+
+The 500m split
+-shown in erg output
+-1:50 means "You are rowing 500 meters every 1 min and 50 seconds"
+-standardizes the concept of average work
+  
+
+## The Head of the Charles
+
+-The largest regatta in the world
+-10,234 Rowers
+-25 Countries
+-781 Clubs
+-4800 meter "Head" Race
+-boats are staggered by seed position 
+-Serpantine race course
+-Bridges cuase bottlenecking 
+  
+## What Countries are represented? 
+
+```{R, echo = FALSE}
+clubs.by.country <- clubs %>% 
+  group_by(country) %>% 
+  tally() %>% 
+  arrange(desc(n))
+
+kable(head(clubs.by.country), col.names = c("coutry", "Number of Clubs"))
+```
+## What Countreis are represented? 
+
+```{R, echo = FALSE}
+c.b.country <- 
+  ggplot(data = clubs.by.country, aes(x=factor(country, levels=unique(country)), y=n))+
+  geom_bar(stat="identity")+
+  ggtitle("HOCR51 Rowing Clubs by Country")+
+  ylab("Number of Clubs")+
+  xlab("Country")
+c.b.country
+
+```
+
+## What Countries are the Competitors from? 
+
+```{R, echo = FALSE}
+athletes.by.country <- athletes %>% 
+  group_by(country) %>% 
+  tally() %>% 
+  arrange(desc(n))
+kable(head(athletes.by.country), col.names = c("coutry", "Number of Rowers"))
+```
+## What countries are the Competitors from? 
+
+```{R, echo = FALSE}
+
+r.b.country <- 
+  ggplot(data = athletes.by.country, aes(x=factor(country, levels=unique(country)), y=n))+
+  geom_bar(stat="identity")+
+  ggtitle("HOCR51 Rowers by Country")+
+  ylab("Number of Clubs")
+r.b.country
+```
+
+## What States are Represented? 
+
+```{R, echo = FALSE}
+
+map.clubs <- plot_ly(data = participation, z = athletes, text = hover, locations = Postal.Code, type = 'choropleth',
+        locationmode = 'USA-states', color = athletes, colors = 'Purples',
+        marker = list(line = list(color = toRGB("black"), width = 1)), colorbar = list(title = "Number of Rowers")) %>%
+  layout(title = '2015 HOCR Participation by State<br>(Hover for breakdown)', geo = list(
+    scope = 'usa',
+    projection = list(type = 'albers usa'),
+    showlakes = TRUE,
+    lakecolor = toRGB('white')
+  ))
+map.clubs
+```
+## What Cities are Represented? 
+
+```{R, echo = FALSE, fig_height = 6}
+
+g <- list(
+  scope = 'usa',
+  projection = list(type = 'albers usa'),
+  showland = TRUE,
+  landcolor = toRGB("gray85"),
+  subunitwidth = 1,
+  countrywidth = 1,
+  subunitcolor = toRGB("white"),
+  countrycolor = toRGB("white")
+)
+
+map.all <- plot_ly(athletes.cities, lon = lng, lat = lat, text = paste(full.name, "<br>", n),
+        marker = list(size = n/10),
+        type = 'scattergeo', locationmode = 'USA-states') %>%
+  layout(title = '2015 Head of the Charles Rowers', geo = g)
+map.all
+```
+
+## Research Questions
+
+From the persepctive of a coach:
+
+  1. What races are the most competitive?
+  2. How Should I tell my Coxswain to Row the Course? 
+  3. How Should I tell my rowers to row the course? 

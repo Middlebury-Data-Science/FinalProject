@@ -1,0 +1,106 @@
+group,order,name,lat,long
+1,1,"Start, BU Boathouse",42.352936,-71.107815
+1,2,"Start, BU Boathouse",42.351975,-71.107908
+1,3,"Start, BU Boathouse",42.351935,-71.107617
+1,4,"Start, BU Boathouse",42.353064,-71.107488
+1,5,"Start, BU Boathouse",42.352936,-71.107815
+2,1,BU Bridge,42.353013,-71.110555
+2,2,BU Bridge,42.352216,-71.110704
+2,3,BU Bridge,42.351975,-71.107908
+2,4,BU Bridge,42.352936,-71.107815
+2,5,BU Bridge,42.353013,-71.110555
+3,1,Magazine Beach,42.354975,-71.115151
+3,2,Magazine Beach,42.354173,-71.116824
+3,3,Magazine Beach,42.35223,-71.11295
+3,4,Magazine Beach,42.352216,-71.110704
+3,5,Magazine Beach,42.353013,-71.110555
+3,6,Magazine Beach,42.354975,-71.115151
+4,1,Riverside Boat Club,42.358062,-71.116143
+4,2,Riverside Boat Club,42.35807,-71.117656
+4,3,Riverside Boat Club,42.356031,-71.118138
+4,4,Riverside Boat Club,42.354173,-71.116824
+4,5,Riverside Boat Club,42.354975,-71.115151
+4,6,Riverside Boat Club,42.356493,-71.115904
+4,7,Riverside Boat Club,42.358062,-71.116143
+5,1,River Street Bridge,42.361438,-71.116198
+5,2,River Street Bridge,42.361058,-71.117311
+5,3,River Street Bridge,42.359156,-71.117238
+5,4,River Street Bridge,42.35807,-71.117656
+5,5,River Street Bridge,42.358062,-71.116143
+5,6,River Street Bridge,42.358833,-71.115877
+5,7,River Street Bridge,42.361438,-71.116198
+6,1,Western Avenue Bridge,42.36429,-71.116291
+6,2,Western Avenue Bridge,42.364203,-71.11746
+6,3,Western Avenue Bridge,42.361058,-71.117311
+6,4,Western Avenue Bridge,42.361438,-71.116198
+6,5,Western Avenue Bridge,42.36429,-71.116291
+7,1,Weeks Footbridge,42.368875,-71.117714
+7,2,Weeks Footbridge,42.368143,-71.11849
+7,3,Weeks Footbridge,42.366519,-71.117674
+7,4,Weeks Footbridge,42.364203,-71.11746
+7,5,Weeks Footbridge,42.36429,-71.116291
+7,6,Weeks Footbridge,42.366869,-71.116276
+7,7,Weeks Footbridge,42.368875,-71.117714
+8,1,Anderson Bridge,42.369172,-71.123037
+8,2,Anderson Bridge,42.368614,-71.123563
+8,3,Anderson Bridge,42.368132,-71.121483
+8,4,Anderson Bridge,42.368302,-71.119492
+8,5,Anderson Bridge,42.368143,-71.11849
+8,6,Anderson Bridge,42.368875,-71.117714
+8,7,Anderson Bridge,42.369537,-71.119826
+8,8,Anderson Bridge,42.369172,-71.123037
+9,1,Newell Boathouse,42.369774,-71.125653
+9,2,Newell Boathouse,42.370226,-71.124121
+9,3,Newell Boathouse,42.369172,-71.123037
+9,4,Newell Boathouse,42.368614,-71.123563
+9,5,Newell Boathouse,42.368982,-71.124839
+9,6,Newell Boathouse,42.369774,-71.125653
+10,1,Hawthorne Street,42.373253,-71.126877
+10,2,Hawthorne Street,42.372794,-71.127596
+10,3,Hawthorne Street,42.372001,-71.126686
+10,4,Hawthorne Street,42.37073,-71.126338
+10,5,Hawthorne Street,42.369774,-71.125653
+10,6,Hawthorne Street,42.370226,-71.124121
+10,7,Hawthorne Street,42.371882,-71.125066
+10,8,Hawthorne Street,42.373253,-71.126877
+11,1,Sparks Street,42.374262,-71.130679
+11,2,Sparks Street,42.373657,-71.130611
+11,3,Sparks Street,42.373672,-71.129557
+11,4,Sparks Street,42.373339,-71.128393
+11,5,Sparks Street,42.372794,-71.127596
+11,6,Sparks Street,42.373253,-71.126877
+11,7,Sparks Street,42.373996,-71.128272
+11,8,Sparks Street,42.374235,-71.129161
+11,9,Sparks Street,42.374262,-71.130679
+12,1,Cambridge Boat Club,42.372245,-71.133643
+12,2,Cambridge Boat Club,42.372283,-71.132647
+12,3,Cambridge Boat Club,42.372895,-71.132491
+12,4,Cambridge Boat Club,42.373372,-71.131803
+12,5,Cambridge Boat Club,42.373657,-71.130611
+12,6,Cambridge Boat Club,42.374262,-71.130679
+12,7,Cambridge Boat Club,42.373824,-71.132513
+12,8,Cambridge Boat Club,42.372751,-71.133619
+12,9,Cambridge Boat Club,42.372245,-71.133643
+13,1,Belmont Hill,42.370683,-71.132525
+13,2,Belmont Hill,42.370976,-71.131557
+13,3,Belmont Hill,42.37191,-71.132495
+13,4,Belmont Hill,42.372283,-71.132647
+13,5,Belmont Hill,42.372245,-71.133643
+13,6,Belmont Hill,42.371569,-71.133353
+13,7,Belmont Hill,42.370683,-71.132525
+14,1,Parking Area,42.368581,-71.13207
+14,2,Parking Area,42.369054,-71.132968
+14,3,Parking Area,42.369528,-71.13255
+14,4,Parking Area,42.370048,-71.132381
+14,5,Parking Area,42.370683,-71.132525
+14,6,Parking Area,42.370976,-71.131557
+14,7,Parking Area,42.369857,-71.131092
+14,8,Parking Area,42.369112,-71.131372
+14,9,Parking Area,42.368581,-71.13207
+15,1,Finish,42.367362,-71.136539
+15,2,Finish,42.366727,-71.135964
+15,3,Finish,42.36752,-71.133699
+15,4,Finish,42.368581,-71.13207
+15,5,Finish,42.369054,-71.132968
+15,6,Finish,42.367898,-71.134916
+15,7,Finish,42.367362,-71.136539
