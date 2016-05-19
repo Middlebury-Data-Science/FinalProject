@@ -1,0 +1,194 @@
+---
+output: html_document
+---
+```{r setup, include=FALSE}
+library(dplyr)
+library(ggplot2)
+library(lubridate)
+library(knitr)
+library(caret)
+library(pROC)
+options(digits = 3)
+scotus <- read.csv("./data/SCDB_Legacy_02_caseCentered_Citation.csv") %>% as.data.frame()
+dtm <- 
+scotus$dateDecision <- mdy(as.character.Date(scotus$dateDecision))
+scotus$dateArgument <- mdy(as.character.Date(scotus$dateArgument))
+
+scotus <- scotus %>% filter(!is.na(partyWinning))
+#________________if we need binary
+scotus_factor <- scotus
+scotus_factor$issueArea <- ifelse(scotus_factor$issueArea==1,"Criminal Procedure",
+                          ifelse(scotus_factor$issueArea==2,"Civil Rights",
+                                 ifelse(scotus_factor$issueArea==3,"First Ammendment",
+                                        ifelse(scotus_factor$issueArea==4, "Due Process",
+                                               ifelse(scotus_factor$issueArea==5, "Privacy",
+                                                      ifelse(scotus_factor$issueArea==6,"Attorneys",
+                                                             ifelse(scotus_factor$issueArea==7,"Unions",
+                                                                    ifelse(scotus_factor$issueArea==8,"Economic Activity",
+                                                                           ifelse(scotus_factor$issueArea==9,"Judicial Power",
+                                                                                  ifelse(scotus_factor$issueArea==10,"Federalism",
+                                                                                         ifelse(scotus_factor$issueArea==11,"Interstate Relations",
+                                                                                                ifelse(scotus_factor$issueArea==12,"Federal Taxation",
+                                                                                                       ifelse(scotus_factor$issueArea==13,"Miscellaneous","Private Action")))))))))))))
+
+duration <- scotus %>%
+  select(dateArgument,dateDecision) %>%
+  filter(!is.na(dateArgument)&&dateArgument) %>% 
+  mutate(years = interval(dateArgument, dateDecision)/dyears(1)) %>% 
+  arrange(desc(years))
+
+
+na <- apply(scotus, 2, function(x) length(which(is.na(x))))  
+
+tendencies_a <- scotus %>% select(term,decisionDirection) %>% 
+  filter(decisionDirection==1) %>% 
+  group_by(term)  %>% 
+  tally() %>% 
+  rename(conservative=n)
+tendencies_b <- scotus %>% select(term,decisionDirection) %>% 
+  filter(decisionDirection==2) %>% 
+  group_by(term)  %>% 
+  tally() %>% 
+  rename(liberal=n)
+tendencies_c <- scotus %>% select(term,decisionDirection) %>% 
+  filter(decisionDirection==3) %>% 
+  group_by(term)  %>% 
+  tally() %>% 
+  rename(unspecifiable=n)
+chief <- scotus %>% group_by(chief) %>% tally() %>% rename(count = n) %>% arrange(desc(count))
+
+
+fpredt <- function(t) ifelse(fini > t , 1,0) 
+
+dd <- scotus %>% 
+  select(partyWinning,jurisdiction,authorityDecision1,lawSupp,lcDisagreement,petitioner,term,issue,issueArea,respondent)
+dd$partyWinning <- ifelse(dd$partyWinning==2,0,dd$partyWinning)
+dd <- na.omit(dd)
+
+ctrl <- trainControl(method = "cv", number = 10, savePredictions =T)
+fit <- train(partyWinning ~  petitioner+
+               respondent+
+               issue+
+               jurisdiction+
+               lawSupp+
+               authorityDecision1+
+               lcDisagreement+
+               issueArea+
+               term,
+                data=dd, 
+                method="glm", 
+                family=binomial,
+                trControl=ctrl)
+fini <- fit$finalModel$fitted.values
+Results <- confusionMatrix(fpredt(0.5),dd$partyWinning)
+```
+---
+title: "Predicting Supreme Court Outcomes"
+author: "Enrique Dupleich Rozo"
+date: "May 21, 2016"
+output: html_document
+---
+
+# Introduction
+
+
+The Supreme Court is the highest federal court of the United States. It was established in 1789 and it has ultimate and appellate jurisdiction over all federal courts in the country. Formal legal systems emerged to manage social conflict and promote the predictability and calculability of the consequences of social action. However, as cases became more complex, applying these legal systems has become increasingly more difficult and thus increasingly more costly. I believe that technology can help us create a more efficient system that ensures greater legal equality among petitioners and respondents as well as being able to expedite the resolution of legal conflicts. With this greater goal in mind, this project aims to assess how predictable a legal system can be. I decided to use the Supreme Court of the United States (SCOTUS) for this analysis because its overarching power seemed fitting for my interests in law as a formal system. 
+
+
+
+# Motivation
+
+In the unequal world we live in today, not everyone can afford to purchase adequate legal advice and these people often have courts failing against them because of this reason. I believe lobbying consistently hinders justice and progress. Legal procedures are not only financially expensive but they are so temporarily as well. For example, indigenous communities in Ecuador have been in a lawsuit with Chevron over oil spilt in the Ecuadorian part of the Amazon forest. This lawsuit was filed in 1993 and is not completely settled despite the very evident damage that the oil has brought to the neighboring communities. Machine Learning is revolutionizing any structured process that builds up society. Law is undoubtedly a complex subject, but it might become a little easier if we accept the fact of AI being a little better than us at certain aspects of solving cases. 
+```{r duration, include=TRUE}
+
+kable(duration %>% head(10))
+
+mean(duration$years,na.rm = T)
+```
+
+# Data
+All of my data came from this website: http://supremecourtdatabase.org/. The dataset consist of 28519 cases in the time span between 1791 to 2014. There are 53 different variables that are categorical with different ranges. Luckily most variables in the dataset already come coded as numbers in some kind of scale, which was very useful for computing the regression. However, a non-negligible part of the dataset has NA as its value. I pre  sume that this is due to the evolution of the court itself. A quick graph shows that there are only 8 variables that are mostly NA, these variables will not be considered any further and the rest of the NA values will be dynamically omitted pertinent to specific plots and or analyses.
+```{r na, include=TRUE}
+plot(na,type="s",main="NA values",xlab="Variables",ylab="count NA's",col="red")
+
+```
+
+The dataset is subdivided into 6 groups of variables: Outcome Variables, Substantive variables, Voting Variables, Chronological Variables, Background Variables and Identification Variables. Some variables are far more interesting than others. 
+Substantive variables provide information that directly influenced the outcome of the case. Among them is the variable decision direction, which describes the perceived ideology that was prevalent to produce the final decision. Below a chart displaying the evolution in these terms of the Supreme Court throughout the years; liberal in blue, conservative in red and unspecifiable in green:
+```{r ideology, include=TRUE}
+
+
+ggplot(scotus=NULL)+
+  geom_line(data=tendencies_a,aes(term,conservative),col="red")+
+  geom_line(data=tendencies_b,aes(term,liberal),col="blue")+
+  geom_line(data=tendencies_c,aes(term,unspecifiable),col="green")+
+  ylab("cases per direction")+
+  ggtitle("Decision Direction by Year")
+```
+
+It is interesting to see in the chart above how as the Supreme Court ages it becomes more definitive in its outcomes. This is even more apparent in when we consider the practices of individual supreme Chief Justices. Since its inception, the Supreme Court has seen 17 Supreme Justices, who have had very different experiences. 
+
+```{r comparisonchiefs, include=TRUE}
+
+ggplot(scotus_factor,aes(as.factor(partyWinning),fill=issueArea))+
+  geom_bar(position="stack")+
+  facet_wrap(~chief,scales = "free")+
+  xlab("Outcome")+
+  ggtitle("CHIEFS")
+
+```
+
+Above, the different issue areas provided in the dataset are broken down by both outcome and Supreme Chief Justice and a few things become apparent. For example, Rutledge and Jay's terms had to deal with cases mostly about Judicial Powers. During Fuller's term most cases failed against the petitioner and during Roberts' , the contrary was true and most of the cases had a favorable disposition for the petitioner. It is important to see how all Chiefs compare in terms of quantities of cases. 
+
+```{r tablechiefs, include=TRUE}
+
+kable(chief)
+```
+
+In order to build on the drastic difference in the distribution of outcomes at different times of the supreme court we look at how they break down at the beginning, in recent times, and during the term of the Chief that has overseen the most cases by a huge margin. 
+
+
+```{r cheifchief, include=TRUE}
+#c("Fuller","Waite","Burger","White","Warren")
+first <- scotus_factor %>% filter(chief %in% c("Ellsworth","Jay","Rutledge", "Marshall"))
+ggplot(first,aes(issueArea,fill=as.factor(partyWinning)))+
+  geom_bar(position="fill")+
+  coord_flip()+
+  ggtitle("Jay, Rutledge, Marshall (1789 - 1835)")
+
+fuller <- scotus_factor %>% filter(chief=="Fuller")
+ggplot(fuller,aes(issueArea,fill=as.factor(partyWinning)))+
+  geom_bar(position="fill")+
+  coord_flip()+
+  ggtitle("Chief Fuller 1988 - 1910")
+
+last <- scotus_factor %>% filter(chief %in% c("Roberts","Rehnquist"))
+ggplot(last,aes(issueArea,fill=as.factor(partyWinning)))+
+  geom_bar(position="fill")+
+  coord_flip()+
+  ggtitle("Rehnquist & Roberts 1986 - 2014")
+```
+
+# Predictions
+
+To what extent can we predict the outcome of these cases? Using the caret package and logistic regression I tried to construct a model that predicts the whether or not the petitioner wins her case. In order to do this I set all the other variables as possible predictors. This approach was not the best since, as it was said before, some variables are better than others. In order to construct a model that performs relatively well, I ran regression on each variable that wasn't mostly populated by NA values and then chose those that performed the best so that they can act all together in the predictions. During this process I also found that there are a few cases of confounding variables, so these were omitted in the final model. Eventually the following equation was used:
+
+$$ partyWinning  \tilde{ }  respondent + issue + jurisdiction +
+lawSupp + authorityDecision1 + lcDisagreement + issueArea + term $$
+
+The model was tested using K-Fold cross validation with a threshold of .5. Here are the results:
+
+
+```{r predictions, include=TRUE}
+Results
+```
+
+It turns out that the model does better than random. The 66% accuracy rate is alright when considering the relative high no-information rate (how the model would fare by only selecting one outcome) of 58%. The Kappa score of 27% is rather low but not terrible. To put this graphically here is a ROC curve:
+
+```{r roc, include=TRUE}
+plot.roc(fit$pred$obs,fit$pred$pred)
+```
+
+# Conclusions
+
+The model does not perform as well as I would have liked, but it definitely makes a statement about the predictability of the Supreme Court. This project focus on the temporal and thematic space with which the Supreme Chiefs operated. Most, if not all, of my data was categorical and I had to omit a great number of cases because of their sparcity. However, the results are still positive, showing that there is potential for more mathematics to be applied to the legal field in hopes of increasing its efficiency (IBM is already onto it in rather spectacular fashion http://www.rossintelligence.com/).
