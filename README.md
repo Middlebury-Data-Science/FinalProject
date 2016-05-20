@@ -1,44 +1,31 @@
 
-# Final Project Code and Data
+#Project Details
 
-* Due Tuesday 2016/5/24 (last day of exam period) at 9am.
-* You must fork this repository as described in the [HW Submission 
-Exercise](https://github.com/Middlebury-Data-Science/HW-0#hw-submission-exercise).
-* Ensure all data files and CSV files are in the folder `data`. So for example, 
-say you want to load the the file `example.csv` in the `data` folder.  You need 
-to run `read.csv("data/example.csv", header=TRUE)` and not 
-`read.csv("example.csv", header=TRUE)`.
-* Fill in the project details below.
-* Delete everything in this file before the section "Project Details".
-* Push/commit **all files** necessary for me to reproduce your final report.
+**Name:** Andrew Holtz
 
+**Project title:** Investigating Differentialy Expressed Genes in the 
+*S.mutans* Transcriptome
 
-#### Repository README Cover Page
+**Abstract:**
 
-Any good repository on GitHub will have an informative cover page. It is an
-advertisement of your work and should give basic instructions on how to use
-it/replicate your work. The contents of the file `README.md` end up being what's
-on the repository cover page. For example:
+Streptococcus mutans is the principal causative agent of dental 
+caries in humans. A major research objective in the Spatafora Lab at Middlebury
+College focuses on identifying genes that are regulated by the S. mutans SloR
+metalloregulator and defining their potential involvement in the caries-forming
+process. Homologs of the SloR metalloregulator in other pathogenic bacteria are
+known to modulate gene expression upon binding DNA in the presence of a metal 
+ion co-repressor. The results of microarray and real-time qRT-PCR experiments
+revealed SloR as a pleiotropic global regulator in S. mutans. To verify the 
+results of the microarray, RNA-Sequencing was performed The goal of this project
+was to analyze the data, from  which conclusions on differential gene expression
+between the wild-type, UA159, and SloR knockout organism, GMS584, were made.
+Discovering genes that are regulated by SloR, such as those involved in 
+oxidative stress or acid tolerance, will sharpen and fortify future treatment 
+and prevention plans against dental cavities. This will aid the millions of 
+people in the world who do not have access to proper dental healthcare or dental
+education.
 
-* The [repo page for `dplyr`](https://github.com/hadley/dplyr).
-* The contents of its [`README.md` file](https://github.com/hadley/dplyr/blob/master/README.md) (click on RAW).
-
-The way you will create your `README.md` is via `README.Rmd`:
-
-* **DO NOT EDIT** `README.md`
-* Rather, edit `README.Rmd` and then Knit it. An updated `README.md` file will
-be outputted.
-* When you push/commit `README.md`, it will show up as your repo's cover page.
+![](README_files/figure-html/unnamed-chunk-1-1.png)<!-- -->
 
 
-
-
-
-# Project Details
-
-* Name: 
-* Project title:
-* Abstract:
-
-![](README_files/figure-html/unnamed-chunk-1-1.png)
 
