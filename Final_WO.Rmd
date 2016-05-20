@@ -1,0 +1,424 @@
+---
+title: "Final Report"
+author: "Andrew"
+date: "May 12, 2016"
+output: html_document
+---
+
+```{r setup, echo = FALSE, eval=TRUE, include=FALSE}
+
+suppressPackageStartupMessages(library(edgeR))
+suppressPackageStartupMessages(library(dplyr))
+suppressPackageStartupMessages(library(pander))
+suppressPackageStartupMessages(library(stringr))
+suppressPackageStartupMessages(library(ggplot2))
+suppressPackageStartupMessages(library(stringr))
+suppressPackageStartupMessages(library(gplots))
+suppressPackageStartupMessages(library(plotly))
+
+```
+
+
+```{r, echo = FALSE, eval=TRUE, warning=FALSE}
+
+#Cleaning up the Data:
+
+#Genome annotation from NCBI Genome Database
+annotation <- read.delim("data/annotation.txt", header=FALSE, comment.char="#")
+
+annotation <- annotation %>%
+  select(V6, V7, V8, V9, V12)
+
+names(annotation)<- c("NCBI_ID", "Gene", "SMU", "A_num", "Desc")
+
+annotation$NCBI_ID <- as.numeric(as.character(annotation$NCBI_ID))
+
+
+#Mapping back to the Genome (done by Dr. Robert Haney)
+
+descripts <- read.csv("data/gene_descriptions.csv")
+
+gene_ID <- data.frame(do.call('rbind',
+                              strsplit(as.character(
+                                descripts$Description),';',fixed=TRUE)))
+
+#Cleaning further to remove descripters
+gene_ID$X1 <- gene_ID$X1 %>%
+  str_replace_all("ID=gene", "") %>%
+  as.numeric(as.character())
+gene_ID$X3 <- gene_ID$X3 %>%
+  str_replace_all("Dbxref=GeneID:", "") %>%
+  as.numeric(as.character())
+
+names(gene_ID)[0:5] <- c("gene_num", "common", "NCBI_ID", "rando", "SMU")
+
+dbx_ID <- gene_ID %>%
+  select(gene_num, NCBI_ID)
+
+#Selective only for the rRNAs and tRNAs
+dbx_RNA <- gene_ID %>%
+  select(NCBI_ID, SMU) %>%
+  filter(NCBI_ID >2000000)
+
+#Remove the locus_tag bit before SMU
+dbx_RNA$SMU <- dbx_RNA$SMU %>%
+  str_replace_all("locus_tag=", "")
+
+#bind NCBI's annotations with the rRNA and tRNA annotations from R.Haney
+annotation <- bind_rows(dbx_RNA, annotation)
+
+annotation2 <- left_join(dbx_ID, annotation, by ="NCBI_ID")
+
+
+#------
+#Analyzing the count matrix
+
+#There are four replicates for each strain. Nothing to do with Mn.
+counts <- read.delim("data/Smutans_UA159_GMS584.genes.counts.matrix",
+                     row.names="Symbol")
+
+#Building DGEList.
+Strand <- factor(c("UA159", "UA159", "UA159", "UA159", "GMS584"
+                   ,"GMS584","GMS584","GMS584"))
+
+y<- DGEList(counts,group=Strand)
+
+
+#Filter transcripts with very low expression counts >1CPM in at least 4 replicates
+keep <- rowSums(cpm(y)>1) >= 4
+y <- y[keep,]
+
+
+#num of genes removed because of low counts
+#dim(y_pre) - dim(y)
+
+#recompute library sized
+y$samples$lib.size <- colSums(y$counts)
+
+#Normalizes for RNA composition by library sizes 
+y <- calcNormFactors(y)
+
+#Dispersion means biological coeffient of variation (BCV) squared.
+
+y <- estimateCommonDisp(y, verbose = TRUE)
+y <- estimateTrendedDisp(y)
+y<- estimateTagwiseDisp(y)
+
+
+#Plot estimated dispersions
+plotBCV(y, log = 'y')
+
+```
+
+\n
+The produced plot above shows a graph of biological variation between samples.
+Biological variation is separates itself from any technical variation. It 
+measures any variation in the data between replicates. You want this number to
+be low, since it will eliminate any differential expression that results from
+variations between replicates. 
+
+The dispersion of a gene is simply another measure of a gene's variance and it 
+is used by DESeq to model the overall variance of a gene's count values.The 
+dispersion can be interpreted as the square of the coefficient of biological 
+variation (e.g. the difference in counts between two biological replicates 
+is 15.5%% so the gene's dispersion is (0.1558)^2 = 0.0246 . Comparing this to
+published data for prokayotes, this number is relatively low, which signifies
+that the data is consistent an that variation in replicates is minimal. 
+
+
+
+```{r, echo = FALSE, eval=TRUE, warning=FALSE}
+
+#Compute exact gene wise tests for differential expression amount treatments
+et <- exactTest(y, pair = c("UA159", "GMS584"))
+#IMPORTANT:  Note that the first group listed in the pair is the baseline for the comparison—so c("UA159","GMS584") then is the comparison of GMS584 to UA159, so genes with positive log-fold change are up-regulated in group GMS584 compared with group UA159 (and vice versa for genes with negative log-fold change).
+
+topTags(et)
+
+```
+
+Above you can see the top 10 genes in terms of signficance based off their 
+P values. Gene numbers are shown on the left. This numbers provide no 
+information on the actual gene and are merely place holders until the genes can
+be mapped to the reference genome. Second to the P value, logFC is an important
+value. This is the log- fold change between GMS584 to UA159. In other words, 
+a logFC of -6.4 means that gene609 in UA159 is 6.4 times more abundant than it 
+is in GMS584. logCPM is the average log counts per million of that gene for
+UA159 and GMS584 and FDR is a measure of confidence. It measures for any 
+variation that could be due to chance. These are all low FDR values. 
+
+
+
+```{r, echo = FALSE, eval=TRUE, warning=FALSE}
+
+
+#Summarize DE genes at 5% FCR (default is 0.05)
+summary(dt <- decideTestsDGE(et))
+
+#Gives the names of DE genes and intergenic
+isDE <- as.logical(dt)
+DEnames <- rownames(y)[isDE]
+
+#Plots each transcript and it's log FC. Shows DE genes in red
+plotSmear(et, de.tags = DEnames)
+abline(h=c(-1,1), col="blue")
+
+#Organizing tTags output
+tTags <- topTags(et,n=NULL)
+
+write.table(tTags[tTags$table$FDR <= 0.05,], file='tTags', sep='\t', quote=F, row.names=T)
+
+tTags <- read.delim("tTags", row.names=1)
+
+tTags <- mutate(tTags, gene_num = rownames(tTags))
+tTags$gene_num <- tTags$gene %>%
+  str_replace_all("gene", "") %>%
+  as.numeric(as.character())
+
+tTags <- tTags %>% 
+  filter(!is.na(gene_num))
+
+#ALMOST FINISHED BEAUTIFUL TABLLLLEE!!!!
+tTags_annot <- left_join(tTags, annotation2, by = "gene_num")
+```
+
+
+The plot above shows the log fold change graphed against log counts-per-million.
+This shows the differential expression of each gene that was read by the 
+Illumina Hi-Seq. In other words this includes all the genes and intergenic 
+regions. Intergenic regions includes the non-coding parts of the transcriptone 
+meaning these do not develop into proteins, but rather are functional in their
+RNA form. These include small RNAs, ribosomal RNA, and tRNA. Differentially 
+expressed (DE) genes are in red, which is based off a p-value of 0.005. The blue 
+lines are there to show DE genes that have a logFC of greater than one. As you
+can see from this graph there are about equal amounts of overexpressed and 
+underexpressed genes in UA159 compared to GMS584. logFC less than 0 correspond
+to an overexpression in UA159. logFC greater than 0 correspond to overexpression
+in GMS584. 
+
+Lastly, the summary function shows the number of genes that are overexpressed
+in UA159 compared to the number of genes that are underexpressed compared to the
+number of genes that are not differentially expressed. As you can see the number
+of overexpressed and underexpressed genes are almost equal. 
+
+
+```{r, echo = FALSE, eval=TRUE, warning=FALSE}
+
+#------------CPM for graphical comparison
+
+logcpm <- cpm(y, prior.count=2, log=TRUE)
+rn_cpm <- as.character(rownames(logcpm))
+
+logcpm <- logcpm %>% 
+  data.frame() %>%
+  tbl_df()
+
+logcpm$gene_num <- as.character(rn_cpm) %>% 
+  str_replace_all("gene", "") %>%
+  as.numeric(as.character())
+
+norm_counts <- logcpm
+
+norm_counts <- norm_counts %>% 
+  mutate(avgCPM_UA159 = (UA159.1 + UA159.2 + UA159.3 + UA159.4)/4) %>% 
+  mutate(avgCPM_GMS584 = (GMS584.1 + GMS584.2 + GMS584.3 + GMS584.4)/4) %>% 
+  filter(!is.na(gene_num))
+  
+norm_counts <- norm_counts %>% 
+  select(gene_num, avgCPM_UA159, avgCPM_GMS584)
+
+#FINAL BEAUTIFUL FINISHED TABLE
+tTags_annot <- 
+  left_join(tTags_annot, norm_counts, by = "gene_num") %>% 
+  select(SMU, Gene, NCBI_ID, logFC, logCPM, PValue, 
+         FDR, Desc, avgCPM_UA159, avgCPM_GMS584) %>% 
+  arrange(SMU)
+
+
+write.csv(file="data/tTags_annot.csv", tTags_annot, row.names = FALSE)
+
+
+#Looking at overall trends in the data with CPM UA159 vs. CPM GMS584
+t <- ggplot(data= tTags_annot, aes(x = avgCPM_UA159, 
+                                   y = avgCPM_GMS584, color = logFC))  
+
+
+t + geom_hex() + 
+  geom_abline(mapping = NULL, data = NULL, slope = 1, intercept = 0) +
+  labs(title = "CPM Between UA159 and GMS584 with FC",
+       x= "UA159(CPM)", y = "GMS584(CPM)")
+
+```
+
+This plot is very similar to the plot from above, but it consolidates much of
+the information into a more approachable image. This emphasisizes that areas 
+of the plot that have the highest concentration of genes. Most of the genes are 
+found to staddle the line of y = x, which means that the most of the genes are 
+found to have the same expression in UA159 and GMS584. In addition, you can see
+that most of the genes have average CPM betwen 5 and 7. Lastly, you can see 
+that the number of genes that are overexpressed in UA159 are more differentailly
+expressed than the genes that are overexpressed in GMS584; in other words, the 
+genes that are overexpressed in UA159 have a higher average logFC than the 
+genes that are overexpressed in GMS584. 
+
+
+
+```{r, echo = FALSE, eval=TRUE, warning=FALSE}
+#--------Linking GENE ONTOLOGY
+
+#Downloaded from Gene Ontology Consortium
+obo <- readLines("go.obo.txt")
+
+id_lines <- which(str_detect(obo, "id: GO:") & !str_detect(obo, "alt_id: GO:"))
+name_lines <- id_lines + 1
+
+
+GO_name <-
+  data_frame(
+    GO=obo[id_lines],
+    name=obo[name_lines]
+)
+
+GO_name$GO <- GO_name$GO %>% 
+  str_replace_all("id: ", "")
+
+GO_name$name <- GO_name$name %>% 
+  str_replace_all("name: ", "")
+
+
+#bringing SMU to GO terms to Biological function
+
+GO_terms <- read.delim("data/GO_terms.txt", header=FALSE) 
+
+names(GO_terms)[1:2] <- c("SMU", "GO")
+
+GO_terms <- left_join(GO_terms, GO_name, by = "GO")
+
+GO_SMU <- right_join(GO_terms, tTags_annot, by= "SMU")
+
+GO_n <- GO_SMU %>% 
+  select(SMU, logFC, logCPM, PValue, GO, name, Desc) %>% 
+  group_by(name) %>% 
+  tally() %>% 
+  top_n(20)
+
+GO_PValue <- GO_SMU %>% 
+  select(SMU, logFC, logCPM, PValue, GO, name, Desc) %>% 
+  group_by(name) %>% 
+  summarise(avg_p = mean(PValue))
+
+#Get the most common and most significant pvalues
+GO_n <- right_join(GO_PValue, GO_n, by = "name") %>% 
+  arrange(avg_p) %>% 
+  head(9)
+
+to_graph <- GO_SMU %>% 
+  select(SMU, GO, logFC, name, Desc, avgCPM_UA159, avgCPM_GMS584) %>% 
+  filter(name %in%GO_n$name)
+
+ggplot(to_graph, aes(x = avgCPM_UA159, y = avgCPM_GMS584, color = logFC)) + 
+  geom_point() +
+  geom_abline(mapping = NULL, data = NULL, slope = 1, intercept = 0) +
+  coord_cartesian(xlim = c(0, 20), ylim = c(0,20)) +
+  labs(title = "Differential Expression of GMS584 vs. UA159 Based off 
+       Most Common GO terms and Highest P values",x = "UA159 CPM", y = "GMS584 CPM") +
+  facet_wrap(~name)
+
+#Most significant but not abundant
+
+GO_n2 <- GO_SMU %>% 
+  select(SMU, logFC, logCPM, PValue, GO, name, Desc) %>% 
+  group_by(name) %>% 
+  tally() %>% 
+  filter(n>5)
+
+GO_PValue2 <- GO_SMU %>% 
+  select(SMU, logFC, logCPM, PValue, GO, name, Desc) %>% 
+  group_by(name) %>% 
+  summarise(avg_p = mean(PValue))
+
+GO_n2 <- right_join(GO_PValue, GO_n2, by = "name") %>% 
+  arrange(avg_p) %>% 
+  head(9)
+
+to_graph2 <- GO_SMU %>% 
+  select(SMU, logFC, logCPM, PValue, GO, name, Desc, avgCPM_UA159, avgCPM_GMS584) %>% 
+  filter(name %in%GO_n2$name)
+
+
+ggplot(to_graph2, aes(x = avgCPM_UA159, y = avgCPM_GMS584, color = logFC)) + 
+  geom_point() +
+  geom_abline(mapping = NULL, data = NULL, slope = 1, intercept = 0) +
+  coord_cartesian(xlim = c(0, 20), ylim = c(0,20)) +
+  labs(title = "Differential Expression of GMS584 vs.UA159 by 
+       P Values of GO terms Greater than 5", x = "UA159 CPM", y = "GMS584 CPM") +
+  facet_wrap(~name)
+
+
+
+#this didn't come up because there is no inclusive GO term for genetic competence
+gene_comp <- GO_SMU %>% 
+  select(SMU, logFC, logCPM, PValue, GO, name, Desc, avgCPM_UA159, avgCPM_GMS584) %>% 
+  filter(str_detect(Desc,"competence"))
+
+ggplot(gene_comp, aes(x = avgCPM_UA159, y = avgCPM_GMS584, color = logFC)) + 
+  geom_point() +
+  geom_abline(mapping = NULL, data = NULL, slope = 1, intercept = 0) +
+  coord_cartesian(xlim = c(0, 20), ylim = c(0,20)) +
+  scale_colour_gradient2(low="#520101", high="blue") +
+  labs(title = "Genetic Competence", x = "UA159 CPM", y = "GMS584 CPM")
+#WOW! ALL genes related to competence are massively downregulated in GMS584
+
+#To be used in Shiny App
+write.csv(file="data/GO_SMU.csv", GO_SMU, row.names = FALSE)
+
+```
+
+These three plots are used to show trends based of Gene ontology terms. Gene 
+Ontology cover three main domains, biological process, molecular function,
+and cellular component. It organizes genes into functional terms which can be 
+used to look at large themes in differential expression of like genes with 
+similar functions.
+
+The first plot shows the most common GO terms with the top 9 p-values and the
+genes that are differentially expressed. Genes are that below the line of y=x
+are upregulated in UA159 and downregulated in GMS584. Genes that are above the
+line y=x are downregualted in UA159 and upregulated in GMS584. This tells us a
+big conclusion- any upregulation in GMS584 shows us a gene that is normally
+under strict regulation by SloR (the regulator that was knocked out in this 
+model). If the gene is upregulated in UA159, then the gene in directly or
+indirectly initiated by SloR. From this faceted plot, you can see that the 
+genes involved with phosphotransferase activity are downregulated in GMS584,
+which means that these genes could be positively regulated, meaning that they 
+could be initiated by the presence of SloR. This is the opposite for transporter
+activity, which means SloR negatively regualtes these genes, meaning SloR 
+prevents the transcription of these genes. 
+
+The next plot shows the differential expression of GMS584 vs UA159 by GO terms
+with the most significant (lowest) p-values that have at least 5 genes. This
+plot shows similar results for the genes involved in phosphotransferase activity 
+and transporter activity. Interestingly, DNA repair and defense response to 
+bacterium seem to be upregulated in UA159 meaning that these genes are under
+SloR activation, meaning SloR directly or indirectly activates their 
+transcription. 
+
+Lastly, I wanted to look at genetic competence.But this highlighted some of
+the problems with using gene ontology terms. The terms are not complete; for
+genetic competence there is no concise term to use. This plot uses gene 
+annotations that are included with the S.mutans genome from the NCBI database. 
+This plot shows are the genes that include the term "competence" in their 
+description. As you can see the genes involved in genetic competence are 
+massively downregulated in GMS584, which highlights the importance of SloR in
+bringing a bacterium to competence. SloR obviously some how activates the 
+expression of genes involved in making a bacterium competent. Competence is 
+a point in the growth of a bacterium when it is able to absorb foreign DNA
+and incorporate it into its own transcription machinery. 
+
+
+
+
+
+
+
+
+
