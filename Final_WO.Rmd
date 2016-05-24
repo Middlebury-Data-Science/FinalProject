@@ -18,6 +18,24 @@ suppressPackageStartupMessages(library(plotly))
 
 ```
 
+**Introduction:**
+
+The Spatafora lab conducted an RNA-Sequencing experiment to see the effect of 
+knocking out the SloR gene on genetic expression. SloR is a metalloregulator 
+which regulates the expression of certain genes in a manganese depedent fashion.
+The goal was to determine which genes, or types of genes are regulated by SloR.
+SloR knockouts of *Streptococcus mutans* were created and labeled "GMS584".
+The wild-type (natural) organism was labeled "UA159". The goal is to determine
+which genes or groups of genes are differentially expressed between these two
+strains of *S.mutans*. In order to do this, four steps were taken. First, 
+all the genes found in *S.mutans*, the counts matrix, and the genome
+alignments were organized into clean tables. Secondly, edgeR, a package under
+Bioconductor, was used to determine fold-change and significance in genetic 
+expression for each gene between UA159 and GMS584. Thirdly, gene ontology data
+was found from the Gene Ontology Consortium and differential expression for
+biological functions were found. 
+
+
 
 ```{r, echo = FALSE, eval=TRUE, warning=FALSE}
 
@@ -88,10 +106,6 @@ y<- DGEList(counts,group=Strand)
 keep <- rowSums(cpm(y)>1) >= 4
 y <- y[keep,]
 
-
-#num of genes removed because of low counts
-#dim(y_pre) - dim(y)
-
 #recompute library sized
 y$samples$lib.size <- colSums(y$counts)
 
@@ -112,18 +126,18 @@ plotBCV(y, log = 'y')
 
 \n
 The produced plot above shows a graph of biological variation between samples.
-Biological variation is separates itself from any technical variation. It 
+Biological variation separates itself from any technical variation. It 
 measures any variation in the data between replicates. You want this number to
 be low, since it will eliminate any differential expression that results from
 variations between replicates. 
 
 The dispersion of a gene is simply another measure of a gene's variance and it 
-is used by DESeq to model the overall variance of a gene's count values.The 
+is used by DESeq to model the overall variance of a gene's count values. The 
 dispersion can be interpreted as the square of the coefficient of biological 
 variation (e.g. the difference in counts between two biological replicates 
-is 15.5%% so the gene's dispersion is (0.1558)^2 = 0.0246 . Comparing this to
+is 15.5%% so the gene's dispersion is (0.1558)^2 = 0.0246). Comparing this to
 published data for prokayotes, this number is relatively low, which signifies
-that the data is consistent an that variation in replicates is minimal. 
+that the data is consistent and that variation in replicates is minimal. 
 
 
 
@@ -141,16 +155,15 @@ Above you can see the top 10 genes in terms of signficance based off their
 P values. Gene numbers are shown on the left. This numbers provide no 
 information on the actual gene and are merely place holders until the genes can
 be mapped to the reference genome. Second to the P value, logFC is an important
-value. This is the log- fold change between GMS584 to UA159. In other words, 
-a logFC of -6.4 means that gene609 in UA159 is 6.4 times more abundant than it 
-is in GMS584. logCPM is the average log counts per million of that gene for
+value. This is the log-fold change between GMS584 to UA159. In other words, a 
+logFC of -6.4 means that gene609 in UA159 is 6.4 times more abundant than it is 
+in GMS584. logCPM is the average log counts per million of that gene for
 UA159 and GMS584 and FDR is a measure of confidence. It measures for any 
 variation that could be due to chance. These are all low FDR values. 
 
 
 
 ```{r, echo = FALSE, eval=TRUE, warning=FALSE}
-
 
 #Summarize DE genes at 5% FCR (default is 0.05)
 summary(dt <- decideTestsDGE(et))
@@ -178,7 +191,7 @@ tTags$gene_num <- tTags$gene %>%
 tTags <- tTags %>% 
   filter(!is.na(gene_num))
 
-#ALMOST FINISHED BEAUTIFUL TABLLLLEE!!!!
+#Bringing genome alignments to the tTags data 
 tTags_annot <- left_join(tTags, annotation2, by = "gene_num")
 ```
 
@@ -193,13 +206,13 @@ expressed (DE) genes are in red, which is based off a p-value of 0.005. The blue
 lines are there to show DE genes that have a logFC of greater than one. As you
 can see from this graph there are about equal amounts of overexpressed and 
 underexpressed genes in UA159 compared to GMS584. logFC less than 0 correspond
-to an overexpression in UA159. logFC greater than 0 correspond to overexpression
+to an upregulation in UA159. logFC greater than 0 correspond to upregulation
 in GMS584. 
 
 Lastly, the summary function shows the number of genes that are overexpressed
-in UA159 compared to the number of genes that are underexpressed compared to the
+in UA159 compared to the number of genes that are downregulated compared to the
 number of genes that are not differentially expressed. As you can see the number
-of overexpressed and underexpressed genes are almost equal. 
+of upregulated and downregulated genes are almost equal. 
 
 
 ```{r, echo = FALSE, eval=TRUE, warning=FALSE}
@@ -234,7 +247,7 @@ tTags_annot <-
          FDR, Desc, avgCPM_UA159, avgCPM_GMS584) %>% 
   arrange(SMU)
 
-
+#To be used in Shiny App
 write.csv(file="data/tTags_annot.csv", tTags_annot, row.names = FALSE)
 
 
@@ -251,7 +264,7 @@ t + geom_hex() +
 ```
 
 This plot is very similar to the plot from above, but it consolidates much of
-the information into a more approachable image. This emphasisizes that areas 
+the information into a more approachable image. This emphasisizes the areas 
 of the plot that have the highest concentration of genes. Most of the genes are 
 found to staddle the line of y = x, which means that the most of the genes are 
 found to have the same expression in UA159 and GMS584. In addition, you can see
@@ -377,7 +390,7 @@ write.csv(file="data/GO_SMU.csv", GO_SMU, row.names = FALSE)
 These three plots are used to show trends based of Gene ontology terms. Gene 
 Ontology cover three main domains, biological process, molecular function,
 and cellular component. It organizes genes into functional terms which can be 
-used to look at large themes in differential expression of like genes with 
+used to observe large themes in differential expression of like genes with 
 similar functions.
 
 The first plot shows the most common GO terms with the top 9 p-values and the
@@ -391,8 +404,8 @@ indirectly initiated by SloR. From this faceted plot, you can see that the
 genes involved with phosphotransferase activity are downregulated in GMS584,
 which means that these genes could be positively regulated, meaning that they 
 could be initiated by the presence of SloR. This is the opposite for transporter
-activity, which means SloR negatively regualtes these genes, meaning SloR 
-prevents the transcription of these genes. 
+activity, which means SloR negatively regulates these genes, meaning SloR 
+blocks transcription of these genes. 
 
 The next plot shows the differential expression of GMS584 vs UA159 by GO terms
 with the most significant (lowest) p-values that have at least 5 genes. This
@@ -402,11 +415,11 @@ bacterium seem to be upregulated in UA159 meaning that these genes are under
 SloR activation, meaning SloR directly or indirectly activates their 
 transcription. 
 
-Lastly, I wanted to look at genetic competence.But this highlighted some of
-the problems with using gene ontology terms. The terms are not complete; for
+Lastly, I wanted to look at genetic competence, but this highlighted some of
+the problems when working with gene ontology. The terms are not complete; for
 genetic competence there is no concise term to use. This plot uses gene 
-annotations that are included with the S.mutans genome from the NCBI database. 
-This plot shows are the genes that include the term "competence" in their 
+annotations that are included with the **S.mutans** genome from the NCBI database. 
+This plot shows the genes that include the term "competence" in their 
 description. As you can see the genes involved in genetic competence are 
 massively downregulated in GMS584, which highlights the importance of SloR in
 bringing a bacterium to competence. SloR obviously some how activates the 
@@ -414,8 +427,16 @@ expression of genes involved in making a bacterium competent. Competence is
 a point in the growth of a bacterium when it is able to absorb foreign DNA
 and incorporate it into its own transcription machinery. 
 
+**Concluding Remarks:**
 
-
+This investigation into the transcriptome of *Streptococcus mutans* proved
+very valuable. New differentially expressed genes have been identified such 
+as those involved in defense response to bacterium and DNA repair. The 
+connection between these genes and SloR were not known before. These new 
+findings will lead to further experiments such as qRT-PCR which will be able
+to experimentally confirm these findings. In addition, the RNA-Seq data
+confirmed previous hypotheses and RT-PCR experiments for genes such as *spx*,
+and *comC*. 
 
 
 
