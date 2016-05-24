@@ -32,8 +32,8 @@ suppressPackageStartupMessages(library(plotly))
 #Dates: June 1, 2012 as the start date and March 09, 2016 as the end date
 cspa <- read.csv("data/cspa.csv", header=TRUE)
 
-#That first column name has an error, let's fix that
-cspa <- rename(cspa, chemicalName = `ï..chemicalName`)
+#That first column name has an error, let's fix that. ACTUALLY IT LOOKS LIKE THIS ONLY EFFECTS ME
+#cspa <- rename(cspa, chemicalName = `ï..chemicalName`)
 
 
 #Lets find out what the different compounds are 
