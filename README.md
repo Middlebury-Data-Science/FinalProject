@@ -1,44 +1,25 @@
-
-# Final Project Code and Data
-
-* Due Tuesday 2016/5/24 (last day of exam period) at 9am.
-* You must fork this repository as described in the [HW Submission 
-Exercise](https://github.com/Middlebury-Data-Science/HW-0#hw-submission-exercise).
-* Ensure all data files and CSV files are in the folder `data`. So for example, 
-say you want to load the the file `example.csv` in the `data` folder.  You need 
-to run `read.csv("data/example.csv", header=TRUE)` and not 
-`read.csv("example.csv", header=TRUE)`.
-* Fill in the project details below.
-* Delete everything in this file before the section "Project Details".
-* Push/commit **all files** necessary for me to reproduce your final report.
-
-
-#### Repository README Cover Page
-
-Any good repository on GitHub will have an informative cover page. It is an
-advertisement of your work and should give basic instructions on how to use
-it/replicate your work. The contents of the file `README.md` end up being what's
-on the repository cover page. For example:
-
-* The [repo page for `dplyr`](https://github.com/hadley/dplyr).
-* The contents of its [`README.md` file](https://github.com/hadley/dplyr/blob/master/README.md) (click on RAW).
-
-The way you will create your `README.md` is via `README.Rmd`:
-
-* **DO NOT EDIT** `README.md`
-* Rather, edit `README.Rmd` and then Knit it. An updated `README.md` file will
-be outputted.
-* When you push/commit `README.md`, it will show up as your repo's cover page.
-
-
-
-
-
 # Project Details
 
-* Name: 
-* Project title:
-* Abstract:
+* Name: Jacob Dixon 
+* Project title: Children's Safe Product Act: Making an Accessible Shiny App
+* Abstract:This project explored the available data from the Children's Safe Product Act of Washington State. Through an exploration of the data, figures of interest are presented as well as a discussion of chemical compounds of interest and the repercussions of having those compounds in children's toys. A Shiny App was created to make this data more accessible to the average user.
 
-![](README_files/figure-html/unnamed-chunk-1-1.png)
+
+
+###Data and Discussion 
+*Exploration of the difficulties of navigating the large Children's Safe Product Act (CSPA) dataset
+
+*Discussion of impications of limited data
+
+
+
+###Shiny App
+*Allows users to choose product of interest that results in graph of companies with submissions matching that product description. 
+
+*Based on product selection, list of companies is populated and user can select a specfic company. This results in two figures; one showing the chemical compounds present, and one showing the purpose of those compounds. 
+
+*Makes navigating the 38,000+ submission dataset much simpler and faster. 
+
+
+
 
