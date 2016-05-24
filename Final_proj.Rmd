@@ -1,0 +1,108 @@
+---
+title: "Children's Safe Product Act - Final Project"
+author: "Jacob Dixon"
+date: "May 24, 2016"
+output: html_document
+---
+
+###Introduction: 
+In 2008 the then governor of Washington State, Chris Gregoire, signed what was considered the [strictest law regarding products designed for children in the United States](http://www.seattlepi.com/local/article/Gregoire-signs-toughest-toy-law-in-U-S-1268902.php). The Children's Safe Product Act was created to limit the amount of potentially harmful chemical compounds found in products that were made for children. The "Children's Safe Products Reporting Rule" also stipulated that companies would report products that they were selling in the state that contained a Chemical of High Concern to Children (CHCC). These CHCCs were outlined by the Washington State Department of Ecology. The submissions from these companies can be found on the Department of Ecology [website](https://fortress.wa.gov/ecy/cspareporting/). The presently available submissions are from June 1, 2012 through March 9, 2016.
+
+With 38,000+ products submitted since 2012 that contain potentially harmful chemical compounds, understanding what chemical compounds are found in the products children use is very important for both parents and local retailers alike. While publically available, the vast amounts of data are likely intimidating to the average person who has little experience navigating a complex dataset. I have outlined the necessity for more accessible data, as well as created a tool to deal with the complication of various data science experience levels in the general populous. 
+
+###The Data
+```{r, echo=FALSE, warning=FALSE}
+#Get all the necessary libraries in here
+suppressPackageStartupMessages(library(ggplot2))
+suppressPackageStartupMessages(library(dplyr))
+suppressPackageStartupMessages(library(lubridate))
+suppressPackageStartupMessages(library(Quandl))
+suppressPackageStartupMessages(library(tidyr))
+suppressPackageStartupMessages(library(foreign))
+suppressPackageStartupMessages(library(ggthemes))
+suppressPackageStartupMessages(library(pander))
+suppressPackageStartupMessages(library(knitr))
+suppressPackageStartupMessages(library(stringr))
+suppressPackageStartupMessages(library(DT))
+suppressPackageStartupMessages(library(plotly))
+
+
+#Import the dataset, this is from Children's Safe Product Act Reported Data
+#Download from: https://fortress.wa.gov/ecy/cspareporting/Reports/ReportViewer.aspx?ReportName=GetAllReport
+#Dates: June 1, 2012 as the start date and March 09, 2016 as the end date
+cspa <- read.csv("data/cspa.csv", header=TRUE)
+
+#That first column name has an error, let's fix that
+cspa <- rename(cspa, chemicalName = `ï..chemicalName`)
+
+
+#Lets find out what the different compounds are 
+compounds <- cspa %>% select(chemicalName) %>% 
+  group_by(chemicalName) %>% 
+  tally()
+
+#Lets plot out those different compounds  
+ggplot(data=compounds, aes(x=reorder(chemicalName, n), y = n)) +
+  geom_bar(stat = "identity", position = "dodge")+
+  theme_tufte()+
+  coord_flip()+
+  labs(title = "Compounds Submitted", x = "Compound", y = "Number Submitted 2012-2016")
+
+```
+
+The figure above highlights one of the first problems one would encounter with this dataset; the vast number of submissions previously discussed, as well as the 60+ compounds found within these submissions. While I have included compounds that occur relatively infrequently, these compounds aid in creating the jumbled, essentially unreadable, appearance that would limit the efforts of the lay person to browse the dataset effectively. 
+
+```{r, echo=FALSE, warning=FALSE}
+
+#Let's pick out the companies that have made <500 submissions 
+companies_top <- cspa %>% select(AccountableOrganizationName) %>% 
+  group_by(AccountableOrganizationName) %>% 
+  tally() %>% 
+  filter(n > 500)
+
+
+#Plot those top ones out
+ggplot(data=companies_top, aes(x=reorder(AccountableOrganizationName, n), y = n)) +
+  geom_bar(stat = "identity", position = "dodge")+
+  theme_tufte()+
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.25, hjust = 1)) +
+  coord_flip()+
+  labs(title = "Company Submissions", x = "Company", y = "Number Submitted")
+
+```
+
+Even if the focus of the interested party began with the companies submitting these compounds, there is still the problem of an overwhelming number of submissions. The figure above only focuses on companies that have made over 500 submissions, a subset of the total submissions available. 
+
+
+```{r, echo=FALSE, warning=FALSE}
+
+#companies I want to focus on
+x <- c("Gap Inc.", "VF Corporation")
+
+#get this data sorted 
+gap_vf <- cspa %>% filter(AccountableOrganizationName %in% x) %>% 
+  group_by(chemicalName)
+
+#group up the different chemicals and fill by company
+gap_vf_chem <- gap_vf %>% group_by(chemicalName, AccountableOrganizationName) %>% 
+  tally() %>% 
+  filter(n>5)
+
+
+#Let's graph that
+ggplot(data=gap_vf_chem, aes(x=reorder(chemicalName, n), y = n, fill = AccountableOrganizationName)) +
+  geom_bar(stat = "identity", position = "dodge")+
+  theme_tufte()+
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.25, hjust = 1)) +
+  coord_flip()+
+  scale_fill_discrete(name = "Company")+
+  labs(title = "Gap and VF Corporation's Compounds", x = "Compound", y = "Number Submitted")
+
+```
+
+Focusing on the two top-submitting companies as an example, we see a number of different chemical compounds present. Most of the products tend to have cobalt and cobalt compounds (used in dyes/inks) or ethylene glycol (used in the manufacturing of plastics/polyesters), but there are many other compounds found within their thousands of submissions. 4-Nonylphenol, for example, is a possible endocrine disruptor. The endocrine system is critical to growth, neural development, sexual function, and many other aspects of human development and homeostasis. Endocrine disruptors have been [shown to act non-monotonically](http://www.ncbi.nlm.nih.gov/pubmed/22419778), which means that effects vary by concentration, from person to person, and do not follow the typical "more exposure = worse effects" curve. This is particularly important for this dataset as concentration ranges are very broad, and do not exist below a concentration of 100 parts-per-million. This limit on concentration can be dangerous if it manifests itself as a completely missed detection, such as a potentially [harmful](http://www.hindawi.com/journals/bmri/2014/840547/) concentration equivalent to parts-per-billion. 
+
+###Conclusion and Shiny App: 
+While it is not possible to address the issue of increasing detection sensitivity with the available data, it is possible to make this dataset more accessible to the average user. I have created a [Shiny App](https://jacobdixon.shinyapps.io/CSPA/) that allows the user to select a product category of interest and identify companies that have submissions in that category. The user can then take those companies and find more information regarding the chemical compounds found in a specific company's submissions, and the purposes of those compounds in their products. This means the user does not have to attempt to navigate a large dataset, and has a starting point for continuing research on the chemical compounds present in the product they are interested in. This data is meant for public use, and facilitating that use is key to understanding more about the products that children in the state of Washington use. 
+
+In the future, increased detection sensitivity during data collection, as well as more conclusive data regarding the effects of specific concentrations of all compounds found in these submissions could greatly increase the power of this application. This data is also limited by the fact that it does not extend to the specific product name. The user will not see the name of the product they see on the shelf in this dataset; connections between the type of product and the company manufacturing that product will have to be made by the user. 
