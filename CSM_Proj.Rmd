@@ -1,5 +1,5 @@
 ---
-title: "Csm_final_proj"
+title: "Lyme Disease and the the Tick Microbiome"
 output: html_document
 ---
 
@@ -7,10 +7,14 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## R Markdown
+##### *Carter Merenstein*
+
+## Background
+
+
 In this project I looked at data from a study on the microbiome of ticks in the Eastern United States. The paper by Van Treuen et al. (2015) collected two species of ticks, *Ixodes scapularis* and *Ixodes affinis*, from 5 states, Connecticut, New York, Virginia, North Carolina, and South Carolina. *I. scapularis* is the primary vector for Lyme disease, which is reported in over 30,000 patients per year in the United States (Centers for Disease Control and Prevention). Lyme disease is caused by the bacteria *Borrelia burgdorferi*, and a human becomes infected after a bite from an infected tick (Steere, 2001).
 
-In addition to *B. burgdorferi*, ticks can carry hundreds of other bacteria that make up their microbiome. Previous studies of the microbiomes of other animals, from humans down to insects, have shown that their microfauna can have great impacts on their health (Narasimhan and Fikrig, 2015; Turnbaugh et al., 2009). Importantly, in vectors of human disease, including ticks, certain members of the microbiome can prevent the disease agent from colonizing the host (Weiss and Aksoy, 2011). A famous example of this is an *Enterobacter sp.* in mosquitos that can prevent the mosquito from carrying the malaria-causing protozoan (Cirimotich et al., 2011).
+In addition to *B. burgdorferi*, ticks can carry hundreds of other bacteria that make up their microbiome. Previous studies of the microbiomes of other animals, from humans down to insects, have shown that their microfauna can have great impacts on their health (Narasimhan and Fikrig, 2015; Turnbaugh et al., 2009). Importantly, in vectors of human disease, including ticks, certain members of the microbiome can prevent the disease agent from colonizing the host (Weiss and Aksoy, 2011). A famous example of this is an *Enterobacter sp.* in mosquitoes that can prevent the mosquito from carrying the malaria-causing protozoan (Cirimotich et al., 2011).
 
 In this project, I will use data on the microbiomes of 92 ticks, first for an exploratory data analysis and subsequently to try to identify bacteria associated with lower *Borrelia* prevalence. The microbiome data was originally in the form of DNA sequences of the bacterial 16S rRNA gene, a standard biomarker for identifying bacteria. This was used to identify Operational Taxonomic Units (OTUs), which are clusters of bacteria that share 97% sequence identity, in the program QIIME. The R analysis in this project starts from a table with OTUs as variables and ticks as observations.
 
@@ -111,14 +115,17 @@ stacked_bar_chart <- ggplot(stacks_collapsed, aes(x = Tick, y = Percent, fill = 
     theme(legend.background = element_rect(color = "Black", size = .5, linetype = "solid"))
 ```
 
+
+## Exploratory Data Analysis
+
 ```{r , echo=FALSE, message=FALSE, warning=FALSE, fig.width=12, fig.height=6}
 
 stacked_bar_chart
 
 ```
-This stacked bar chart graphically represents the microbiome of each tick. The top 24 most common OTUs are shown and all others are grouped into the grey "other" category. Each virtical bar represents a single tick. OTUs are geven along with the lowest identified taxonomy (o = order, f = family, g = genus).
+This stacked bar chart graphically represents the microbiome of each tick. The top 24 most common OTUs are shown and all others are grouped into the grey "other" category. Each vertical bar represents a single tick. OTUs are even along with the lowest identified taxonomy (o = order, f = family, g = genus).
 
-The most noticale trend is that some ticks have extremely low diversity, being made up of almost entirely one OTU. The two taxa that dominate are in the genus *Rickettsia*, and the family *Enterobacteriaceae*.
+The most noticeable trend is that some ticks have extremely low diversity, being made up of almost entirely one OTU. The two taxa that dominate are in the genus *Rickettsia*, and the family *Enterobacteriaceae*.
 
 ```{r , echo=FALSE, message=FALSE, warning=FALSE, fig.width=12, fig.height=4}
 
@@ -157,7 +164,11 @@ stacked_bar_m <-ggplot(m_collapsed, aes(x = Tick, y = Percent, fill = OTU_Collap
 stacked_bar_m
 
 ```
-Some more differences become clear when we separate out male and female ticks, and facet by location collected. For example, we see that the females generally have a higher burden of Rickettsia (purple) than their male counterparts. It appears as though females are less diverse in general, which means that we might want to separate out males and females in future analysis. There are also pretty noticable differences between state/species; *I. scapularis* ticks collected in North Carolina are dominated by an OTU in the family *Enterobacteriaceae* that is rare in other states. Again, this suggests that we will need to separate appropriately by species and state for future analysis.
+
+
+#### Differences in microbiome by Sex and Location
+
+Some more differences become clear when we separate out male and female ticks, and facet by location collected. For example, we see that the females generally have a higher burden of Rickettsia (purple) than their male counterparts. It appears as though females are less diverse in general, which means that we might want to separate out males and females in future analysis. There are also pretty noticeable differences between state/species; *I. scapularis* ticks collected in North Carolina are dominated by an OTU in the family *Enterobacteriaceae* that is rare in other states. Again, this suggests that we will need to separate appropriately by species and state for future analysis.
 
 
 ```{r , echo=FALSE, message=FALSE, warning=FALSE, fig.width=10, fig.height=5}
@@ -166,14 +177,15 @@ ticks <- inner_join(ticks, sex, by="Tick")
 species_richness <- group_by(ticks, Tick, Sex) %>%  summarize(Num_species = sum(Count > 0))
 richness_histogram <- ggplot(data=species_richness, aes(x = Num_species)) +
     geom_histogram(bins=10) +
-    facet_wrap(~Sex)
+    facet_wrap(~Sex) +
+    ggtitle("Species Richness by Sex")
 richness_histogram
 means <- species_richness %>% group_by(Sex) %>%
     summarize(mean = mean(Num_species))
 se <- species_richness %>% group_by(Sex) %>%
     summarize(mean = sd(Num_species)/sqrt(n()))
 ```
-A histgram of species richness (the number of OTU per tick) shows that the microbomes of male ticks are indeed more diverse than those of female ticks. Males had an average of 82 +/- 5.7 OTUs, females had 63 +/- 3.7 OTUs.
+A histogram of species richness (the number of OTU per tick) shows that the microbomes of male ticks are indeed more diverse than those of female ticks. Males had an average of 82 +/- 5.7 OTUs, females had 63 +/- 3.7 OTUs.
 
 ```{r location pca, echo=FALSE, message=FALSE, warning=FALSE, fig.width=12, fig.height=6}
 # this part was done after I found the metadata file, so the region is done a bit differently than above
@@ -185,14 +197,15 @@ ticks_meta <- left_join(just_ticks, metadata, by = "Tick") #this seems redundant
 ticks_meta <- cbind(ticks_meta, tick.pca$x[1:nrow(ticks_meta), 1:2])
 
 pca_location <- ggplot(ticks_meta, aes(x = PC1, y = PC2, fill = species_and_state), color = "black") + 
-  geom_point(size = 4, pch = 21, alpha=0.5) + scale_fill_manual(values = c25) #+ geom_text(hjust = 0, nudge_x = 0.25)
+  geom_point(size = 4, pch = 21, alpha=0.5) + scale_fill_manual(values = c25) +
+  ggtitle("PCA of all ticks by species and state")#+ geom_text(hjust = 0, nudge_x = 0.25)
 #pca_location
 
 ```
 
-###Principal Compoenent Analsysis
+###Principal Component Analysis
 
-Another way we can compare microbiomes is with prinicpal compoenent analysis (PCA). This puts the microbiome on an x,y coordinate plane using axes that attempt to summarize as much of the varation as possible. The two best axes only were able to capture 16.7% of the variation in OTU abundance between ticks, meaning it only captures the biggest differences.
+Another way we can compare microbiomes is with principal component analysis (PCA). This puts the microbiome on an x,y coordinate plane using axes that attempt to summarize as much of the variation as possible. The two best axes only were able to capture 16.7% of the variation in OTU abundance between ticks, meaning it only captures the biggest differences.
 
 We see below that the male ticks spread apart much further than the females. This shows that there is a much greater diversity between male ticks (known as beta diversity), in addition to greater diversity within each male (alpha diversity).
 
@@ -203,7 +216,8 @@ Because the females cluster so strongly in the PCA of all ticks, a second set of
 ```{r , echo=FALSE, message=FALSE, warning=FALSE, fig.width=12, fig.height=6}
 #initiallly this was combined with the one above, using shape, but it was just too much informaiton
 pca_sex <- ggplot(ticks_meta, aes(x = PC1, y = PC2, fill = Sex), color = "black") + 
-  geom_point(size = 4, pch = 21, alpha=0.5)
+  geom_point(size = 4, pch = 21, alpha=0.5) +
+  ggtitle("PCA of all ticks by sex")
 pca_sex
 
 ```
@@ -226,7 +240,8 @@ female_ticks <- cbind(female_ticks, f.pca$x[1:nrow(female_ticks), 1:2])
 
 
 f_pca_location <- ggplot(female_ticks, aes(x = PC1, y = PC2, fill = species_and_state), color = "black") + 
-  geom_point(size = 4, pch = 21, alpha=0.5) + scale_fill_manual(values = c25) #+ geom_text(hjust = 0, nudge_x = 0.25)
+  geom_point(size = 4, pch = 21, alpha=0.5) + scale_fill_manual(values = c25) +
+  ggtitle("PCA of female ticks by species and state") #+ geom_text(hjust = 0, nudge_x = 0.25)
 f_pca_location
 
 ```
@@ -235,7 +250,7 @@ f_pca_location
 
 The randomForest R package is a basic machine learning technique that builds a model for sorting data using repeated subsetting and cross validating. Here, we create a model to predict the state and species of a tick given the abundance of each OTU. The error rate is the percent at which the model misclassifies a tick, and the confusion matrix gives how often each type of tick was classified as each other type. As its name implies, a random forest model is non-deterministic, so the error rates and confusion matrix below may change with each knit, but with a large enough number of replicate trees the results will be fairly stable.
 
-Here we see an error rate of around 24%. This is largely from *I. affinis* ticks in North Carolina and *I. scapularis* from New York. 81% of NC affinis ticks were misclassified as scapularis from Virginia. This tells us that the microbiomes of these two groups are highly similar almost indistinguishable. Ticks from NY were mislcassified as either CT or VA 100% of the time.
+Here we see an error rate of around 24%. This is largely from *I. affinis* ticks in North Carolina and *I. scapularis* from New York. 81% of NC affinis ticks were misclassified as scapularis from Virginia. This tells us that the microbiomes of these two groups are highly similar almost indistinguishable. Ticks from NY were misclassified as either CT or VA 100% of the time.
 
 Ticks from Virginia were successfully classified 100% of the time, despite having greater beta diversity as observed in the PCA. This is useful, since VA was the largest sample size. If the differences between locations may cloud out a signal in our comparison of *Borrelia* positives and negatives, we might be able to reduce noise by looking just within Virginia ticks.
 
@@ -253,7 +268,7 @@ fit
 ```
 ## Differences in ticks with and without *Borrelia*
 
-The main objective of this project is to identify bacteria that may be preventing *Borrelia burgdorferi* (the Lyme disease bactiera) from colonizing a tick. I do this now by comparing the microbiomes of each and trying to find OTUs that are associated with a reduction in *Borrelia* prevalence. Below are two sets of stacked bar charts, negative ticks on top, and positives on bottom. In this view no major differences really stand out, except for the obvious that postives have the orange *Borrelia* OTU. Still, it's worth showing the stacked format again in case anything obvious did pop out.
+The main objective of this project is to identify bacteria that may be preventing *Borrelia burgdorferi* (the Lyme disease bacteria) from colonizing a tick. I do this now by comparing the microbiomes of each and trying to find OTUs that are associated with a reduction in *Borrelia* prevalence. Below are two sets of stacked bar charts, negative ticks on top, and positives on bottom. In this view no major differences really stand out, except for the obvious that positives have the orange *Borrelia* OTU. Still, it's worth showing the stacked format again in case anything obvious did pop out.  
 
 ``` {r, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 12, fig.height=4}
 # this Tick_borrelia_count.csv file is generated from the make_borrelia_file.R
@@ -296,7 +311,8 @@ stacked_bar_p <- ggplot(p_collapsed, aes(x = Tick, y = Percent, fill = OTU_Colla
 stacked_bar_p
 
 ```
-### Random Forest to predict *Borrelia* abundance
+
+###Random Forest to predict *Borrelia* abundance
 
 In order to start identifying key differences in the microbiome of ticks with and without *Borrelia*, I again used a random forest model. This time, instead of classifying on a binary variable, I used the model to predict the abundance of OTUs in the genus Borrelia. I split by males and females because the above EDA showed considerable differences in males and females.
 
@@ -337,24 +353,28 @@ female.rf
 
 One useful feature of a randomForest approach is that our model can tell us what variables (OTUs) were most influential as predictors using a variable importance plot. In the case of a regression model, this plot can show us the variables most strongly correlated with the outcome variable.
 
-Here we see that the 4 most important OTUs are all closely related, in the family *Oxalobacteraceae* (the genus *Jathinobacterium* is in this family). This suggests that these correlations might be the result of an actual biological interaction rathern than random noise, as similar species are showing a similar pattern.
+Here we see that the 4 most important OTUs are all closely related, in the family *Oxalobacteraceae* (the genus *Jathinobacterium* is in this family). This suggests that these correlations might be the result of an actual biological interaction rather than random noise, as similar species are showing a similar pattern.
 
-Unfortunately for us, these species are all positively correlated with *Borrelia* abundance. This means that even if it represents a biologically relevant interaction, these *Oxalobacteraceae* are actually fascilitating *Borrelia* colonization, rather than preventing it.
+Unfortunately for us, these species are all positively correlated with *Borrelia* abundance. This means that even if it represents a biologically relevant interaction, these *Oxalobacteraceae* are actually facilitating *Borrelia* colonization, rather than preventing it.  
+
 
 ``` {r, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 12, fig.height=6}
 
 varImpPlot(male.rf)
 
-ggplot(male_ticks, aes(x = OTU305668gJanthinobacterium, y = borrelia_ct)) + geom_point() + stat_smooth(method = "lm")
+ggplot(male_ticks, aes(x = OTU305668gJanthinobacterium, y = borrelia_ct)) + geom_point() + stat_smooth(method = "lm") +
+  labs(y = "Borrelia abundance", x = "OTU305668; g__Janthinobacterium (%)") 
 
 ```
-#### Classificaiton model
+
+
+####Classificaiton model
 
 To get a better sense of how the model is working, I collapsed the Borrelia abundance into just positives and negatives. This lets us use random forest to classify ticks as positive or negative, and shows us a more helpful breakdown of the error we're getting.
 
-Unfortunately, we see that our error rates for both males and females are worse than if we were just guessing based off of percent positives. This suggests that there's just a lot of noise in the data that's unavoidable and will throw off our model. One problem is also that there is a wide range in the *Borrelia* burden of positive ticks, from <1% to >25% of the whole microbiome being *Borrelia*. In this binary model we treat these ticks the same, but this difference will directly affect the remaining microbiome and introduce high variation within the positve group.
+Unfortunately, we see that our error rates for both males and females are worse than if we were just guessing based off of percent positives. This suggests that there's just a lot of noise in the data that's unavoidable and will throw off our model. One problem is also that there is a wide range in the *Borrelia* burden of positive ticks, from <1% to >25% of the whole microbiome being *Borrelia*. In this binary model we treat these ticks the same, but this difference will directly affect the remaining microbiome and introduce high variation within the positive group.
 
-To try to reduce noise I also tried a model of just the males from Virginia, hoping to eliminate the effect of location. However, this model had an even worse error rate than the all male model.
+To try to reduce noise I also tried a model of just the males from Virginia, hoping to eliminate the effect of location. However, this model had an even worse error rate than the all male model.  
 
 All Males:
 ``` {r, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 12, fig.height=6}
@@ -399,6 +419,13 @@ va.male.rf.yn
 
 ```
 
+
+### Difference in Frequency
+
+Because the random forest models were not very successful in identifying bacteria that are negatively associated with *Borrelia* presence, I tried a second approach. Here I compare the frequency at which each OTU is found in ticks with and without *Borrelia*. This is an easy way to find OTUs that commonly co-occur with *Borrelia*, and those that are rarely found occupying the same tick as *Borrelia*. If a type of bacteria were able to prevent *Borrelia* from colonizing then it would be found more often in negative ticks and rarely in positive ticks.
+
+Like the models above, I separated by sex in order to reduce the noise from sex differences. I also tested just the Virginia males to reduce location bias.
+
 ``` {r, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 12, fig.height=6}
 otus_present <- inner_join(ticks_with_meta, borrelia_counts, by="Tick")
 otus_present <- otus_present %>% 
@@ -424,8 +451,9 @@ f_ticks <- spread(f_ticks, Borrelia, frequency) %>%
 ggplot(f_ticks %>%  top_n(20, abs(diff)), aes(x = reorder(OTU_taxon, diff), y = diff, fill = as.factor(ifelse(diff > 0, "Positive", "Negative")))) +
   geom_bar(stat = "identity") +
   coord_flip() + guides(fill=FALSE) +
-  labs(y = "Difference in Frequency (females)", x = "OTU; Taxonomy") +
-  theme(text = element_text(size=14))
+  labs(y = "<- less common with Borrelia, more common with Borrelia ->", x = "OTU; Taxonomy") +
+  theme(text = element_text(size=14)) +
+  ggtitle("All Females")
 
 m_ticks <- m_ticks %>% group_by(Borrelia, OTU_taxon) %>%
   summarize(frequency = mean(present))
@@ -436,8 +464,9 @@ m_ticks <- spread(m_ticks, Borrelia, frequency) %>%
 ggplot(m_ticks %>%  top_n(20, abs(diff)), aes(x = reorder(OTU_taxon, diff), y = diff, fill = as.factor(ifelse(diff > 0, "Positive", "Negative")))) +
   geom_bar(stat = "identity") +
   coord_flip() + guides(fill=FALSE) +
-  labs(y = "Difference in Frequency (males)", x = "OTU; Taxonomy")+
-theme(text = element_text(size=14))
+  labs(y = "<- less common with Borrelia, more common with Borrelia ->", x = "OTU; Taxonomy")+
+theme(text = element_text(size=14)) +
+  ggtitle("All Males")
 
 VA_males_diff <- otus_present %>%  filter(Sex == "M") %>% 
   filter(species_and_state == "scapularis_va") %>% 
@@ -449,8 +478,9 @@ VA_males_diff <- otus_present %>%  filter(Sex == "M") %>%
 ggplot(VA_males_diff %>%  top_n(20, abs(diff)), aes(x = reorder(OTU_taxon, diff), y = diff, fill = as.factor(ifelse(diff > 0, "Positive", "Negative")))) +
   geom_bar(stat = "identity") +
   coord_flip() + guides(fill=FALSE) +
-  labs(y = "Difference in Frequency (VA males)", x = "OTU; Taxonomy") +
-theme(text = element_text(size=14))
+  labs(y = "<- less common with Borrelia, more common with Borrelia ->", x = "OTU; Taxonomy") +
+theme(text = element_text(size=14)) +
+  ggtitle("Virginia Males")
 
 VA_males_chi <- otus_present %>% filter(Sex == "M") %>% 
   filter(species_and_state == "scapularis_va")
@@ -467,6 +497,15 @@ VA_males_chi <- VA_males_chi %>%
   mutate(negative = negative * neg) %>% 
   mutate(positive = positive * pos)
 
+```
+
+#### Significance in differences
+
+The OTU 4480861 (g__*Catenibacterium*) was found more often in ticks without *Borrelia* than those with. A Chi Squared test found that this difference is actually significant to a 95% cutoff (p = 0.035, below). However, in these data we had over 300 OTUs that I test here for differences in prevalence. With a alpha of 0.05 we would still expect to have more than 15 OTUs with a p<0.05, even if the data were totally random. To get around this, we need to adjust our p value to reflect the number OTUs tested. This adjustment is called the Bonferoni correction and simply involves multiplying the p value (0.035) by the number of variables tested. Following this correction we no longer have any OTUs that are found significantly more often in the absence of *Borrelia*.
+
+
+``` {r, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 12, fig.height=6}
+
 #from the graph we get the most differentially present
 most_sig <- VA_males_chi %>%  filter(OTU_taxon == "4480861; g__Catenibacterium") 
 #most_sig
@@ -476,8 +515,23 @@ chisq.test(chi_df)
 
 ```
 
+## Conclusions
 
 
+In this project I demonstrated that female ticks are less diverse than males, both in terms of species richness and in beta diversity. This was primarily driven by an increase in the abundance of two OTUs of *Rickettsia* and *Enterobacteraceae* in most females. Principal component analysis showed that ticks from some locations cluster closely together (North Carolina), while others show high diversity between ticks (Virginia). A random forest algorithm demonstrated that *I. affinis* ticks from North Carolina are similar to *I. scapularis* in Virginia, though ticks from Virginia were always successfully distinguished as such.
+
+These findings in the exploratory phase were used to drive a comparison of ticks with and without *Borrelia*. The most meaningful trend that I found was a positive correlation between abundance of bacteria in the family *Oxalobacteraceae*. As discussed previously, when testing a large number of variables for possible correlations, false positives are likely. However, finding 4 false positives that all happen to be in the same biological family is considerably less likely. This suggests to me that there is some biological reason why *Borrelia* and *Oxalobacteraceae* abundances are related. This doesn't necessarily suggest that these bacteria directly interact, however. It is possible that they are vulnerable to similar environmental stressors or thrive in similar growth conditions.
+
+Further attempts to identify bacteria that are negatively associated with *Borrelia* were unsuccessful. These data are very noisy, in that there are many types of bacteria that almost certainly have no relation to *Borrelia*. For example, some bacteria live only in the ovaries of the tick, while *Borrelia* colonizes the midgut. The more unrelated bacteria included in these data the more any signal gets drowned out by the noise. A more thorough analysis could filter out species that are known not to occupy a similar niche as *Borrelia*, though a large majority of bacteria identified here have not been previously studied in ticks. One way around this in future studies is to dissect the tick prior to DNA sequencing in order to specifically study the microbiome of the midgut.
+
+#### References
+Centers for Disease Control and Prevention Lyme Disease.
+Cirimotich, C.M., Dong, Y., Clayton, A.M., Sandiford, S.L., Souza-Neto, J.A., Mulenga, M., and Dimopoulos, G. (2011). Natural Microbe-Mediated Refractoriness to Plasmodium Infection in Anopheles gambiae. Science 332, 855–858.
+Narasimhan, S., and Fikrig, E. (2015). Tick microbiome: the force within. Trends Parasitol. 31, 315–323.
+Steere, A.C. (2001). Lyme disease. N. Engl. J. Med. 345, 115–125.
+Treuren, W.V., Ponnusamy, L., Brinkerhoff, R.J., Gonzalez, A., Parobek, C.M., Juliano, J.J., Andreadis, T.G., Falco, R.C., Ziegler, L.B., Hathaway, N., et al. (2015). Variation in the Microbiota of Ixodes ticks with geography, species and sex. Appl. Environ. Microbiol. AEM.01562–15.
+Turnbaugh, P.J., Hamady, M., Yatsunenko, T., Cantarel, B.L., Duncan, A., Ley, R.E., Sogin, M.L., Jones, W.J., Roe, B.A., Affourtit, J.P., et al. (2009). A core gut microbiome in obese and lean twins. Nature 457, 480–484.
+Weiss, B., and Aksoy, S. (2011). Microbiome influences on insect host vector competence. Trends Parasitol. 27, 514–522.
 
 
 
