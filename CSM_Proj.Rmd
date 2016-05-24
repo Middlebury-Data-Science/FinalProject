@@ -28,6 +28,10 @@ suppressPackageStartupMessages(library(randomForest))
 suppressPackageStartupMessages(library(stringr))
 
 
+#this global is used for random forests later
+# at 50000 the models get stable, but 500 is usefull for kntting fast.
+NUM_TREES = 500
+
 # This vector of colors is used for the stacked bar graphs.
 c25 <- c("#6A3D9A", # purple
          "dodgerblue2","#E31A1C", # red
@@ -263,7 +267,7 @@ df_ticks.rf <- inner_join(sp_st, ticks_long, by = "Tick") %>%
 #typeof(df_ticks.rf$species_and_state)
 
 #at ntree 50,000 the fit seems fairly stable. Too far below this and it changes every time you run it.
-fit <- randomForest(species_and_state ~ ., data=df_ticks.rf[,2:ncol(df_ticks.rf)], ntree=5000)
+fit <- randomForest(species_and_state ~ ., data=df_ticks.rf[,2:ncol(df_ticks.rf)], ntree=NUM_TREES)
 fit
 ```
 ## Differences in ticks with and without *Borrelia*
@@ -342,10 +346,10 @@ male_ticks <- filter(df_b_long, Sex == "M")
 female_ticks <- filter(df_b_long, Sex == "F")
 
 # Yes, we should use percent of borrelia, not count for this. But, as mentioned earlier, these data are already subsampled (via. QIIME) such that all ticks have almost the same number of observations. It would be an easy fix but it's too late now.
-male.rf <- randomForest(borrelia_ct ~ ., data=male_ticks[,5:ncol(male_ticks)], ntree = 500)
+male.rf <- randomForest(borrelia_ct ~ ., data=male_ticks[,5:ncol(male_ticks)], ntree = NUM_TREES)
 male.rf
 
-female.rf <- randomForest(borrelia_ct ~ ., data=female_ticks[,5:ncol(female_ticks)], ntree         = 500)
+female.rf <- randomForest(borrelia_ct ~ ., data=female_ticks[,5:ncol(female_ticks)], ntree = NUM_TREES)
 female.rf
 #varImpPlot(female.rf)
 ```
@@ -388,14 +392,14 @@ rf_data <- ticks_long_yn[,-1][,-2][,-2]
 male_ticks_yn <- filter(ticks_long_yn, Sex == "M")
 female_ticks_yn <- filter(ticks_long_yn, Sex == "F")
 
-male.rf_yn <- randomForest(Borrelia ~ ., data=male_ticks_yn[,5:ncol(male_ticks_yn)], ntree = 500)
+male.rf_yn <- randomForest(Borrelia ~ ., data=male_ticks_yn[,5:ncol(male_ticks_yn)], ntree = NUM_TREES)
 male.rf_yn
 #varImpPlot(male.rf_yn)
 ```
 All Females:
 ``` {r, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 12, fig.height=6}
 
-female.rf_yn <- randomForest(Borrelia ~ ., data=female_ticks_yn[,5:ncol(female_ticks_yn)], ntree = 500)
+female.rf_yn <- randomForest(Borrelia ~ ., data=female_ticks_yn[,5:ncol(female_ticks_yn)], ntree = NUM_TREES)
 female.rf_yn
 #varImpPlot(female.rf_yn)
 
@@ -408,12 +412,12 @@ Virginia Males:
 rf_data_m <- male_ticks_yn[,-1][,-2][,-2] #this includes state_and_species
 
 # Does including state in the formula help?
-male.rf_yn <- randomForest(Borrelia ~ ., data=rf_data, ntree = 500)
+male.rf_yn <- randomForest(Borrelia ~ ., data=rf_data, ntree = NUM_TREES)
 #male.rf_yn
 #varImpPlot(male.rf_yn)
 
 VA_males <- filter(male_ticks_yn, species_and_state == "scapularis_va")
-va.male.rf.yn <- randomForest(Borrelia ~ ., data=VA_males[,5:ncol(male_ticks_yn)], ntree = 500)
+va.male.rf.yn <- randomForest(Borrelia ~ ., data=VA_males[,5:ncol(male_ticks_yn)], ntree = NUM_TREES)
 va.male.rf.yn 
 #varImpPlot(male.rf_yn)
 
