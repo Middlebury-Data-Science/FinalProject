@@ -1,0 +1,1284 @@
+---
+title: "How to Row the Head of the Charles"
+author: "Phil Hoxie"
+date: "May 24, 2016"
+output: html_document
+---
+
+## Abstract
+
+This paper seeks to understand the Head of the Charles primarily as it pertains to collegiate rowing. This paper evaluates the relative competitiveness of each event at the Head of the Charles and takes a detailed look at how the 4s and 8s rowed the course and how the course itself effected the outcome of the race. Overall, it appears that boats that started fastest out of the gate did better even though they dropped in the distribution later in the race. 
+
+## Introduction
+
+
+![](http://grfx.cstv.com/photos/schools/wis/sports/w-rowing/auto_bsi_wide/10446715.jpeg)
+
+The Head of the Charles started in 1964 and today is the largest regatta in the world. The regatta draws almost 11,000 rowers from 25 countries. However, the United States dominates the delegation of rowers, with Canada and Great Britain in distant second and third, respectively. 
+
+```{r, echo = FALSE, message=FALSE, error=FALSE, warning=FALSE}
+## Packages
+library(plyr)
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+library(lubridate)
+library(leaflet)
+library(ggmap)
+library(maps)
+library(maptools)
+library(plotly)
+library(rgdal)
+library(rgeos)
+library(scales)
+library(rvest)
+library(stringr)
+library(knitr)
+## Data
+split.polygons <- read.csv("data/split.polygons.csv", header = TRUE, stringsAsFactors = FALSE)
+
+athletes <- read.csv(file = "data/athletes_hocr.csv", header = TRUE)
+clubs <- read.csv(file = "data/clubs_hocr.csv", header = TRUE)
+events <- read.csv(file = "data/events_hocr.csv", header = TRUE)
+races <- read.csv(file = "data/races_hocr.csv", header = TRUE)
+results <- read.csv(file = "data/results.entry.csv", header = TRUE, stringsAsFactors = FALSE)
+
+race.details <- left_join(events, races, by = "event_id")
+
+markers <- read.csv("data/markers.csv", header = TRUE, stringsAsFactors = FALSE)
+
+penalty.markers <- read.csv("data/penalty.markers.csv", header = TRUE, stringsAsFactors = FALSE)
+
+## results by race
+
+## Men
+m.alum.8 <- read.csv(file = "data/m.alum.8.csv", header = TRUE)
+m.chmp.4 <- read.csv(file = "data/m.chmp.4.csv", header = TRUE)
+m.chmp.8 <- read.csv(file = "data/m.chmp.8.csv", header = TRUE)
+m.club.4 <- read.csv(file = "data/m.chmp.4.csv", header = TRUE)
+m.club.8 <- read.csv(file = "data/m.chmp.8.csv", header = TRUE)
+m.coll.4 <- read.csv(file = "data/m.college.4.csv", header = TRUE)
+m.coll.8 <- read.csv(file = "data/m.college.8.csv", header = TRUE)
+m.lght.4 <- read.csv(file = "data/m.light.4.csv", header = TRUE)
+m.lght.8 <- read.csv(file = "data/m.light.8.csv", header = TRUE)
+
+## Women
+
+w.alum.8 <- read.csv(file = "data/w.alum.8.csv", header = TRUE)
+w.chmp.4 <- read.csv(file = "data/w.chmp.4.csv", header = TRUE)
+w.chmp.8 <- read.csv(file = "data/w.chmp.8.csv", header = TRUE)
+w.club.4 <- read.csv(file = "data/w.chmp.4.csv", header = TRUE)
+w.club.8 <- read.csv(file = "data/w.chmp.8.csv", header = TRUE)
+w.coll.4 <- read.csv(file = "data/w.college.4.csv", header = TRUE)
+w.coll.8 <- read.csv(file = "data/w.college.8.csv", header = TRUE)
+w.lght.4 <- read.csv(file = "data/w.light.4.csv", header = TRUE)
+w.lght.8 <- read.csv(file = "data/w.light.8.csv", header = TRUE)
+
+## Master results sheet
+
+## First we must delete the extra columns and standardize the column names
+
+m.alum.8 <- m.alum.8 %>% 
+  select(event_id, place, status, 
+         lane_bow, club, crew, 
+         rower, penalty, penalty_desc, 
+         time_official, delta, percent, 
+         split1, cum1, split2, cum2, 
+         split3, cum3, split4, cum4)
+
+
+w.alum.8 <- w.alum.8 %>% 
+  select(event_id, place, status, 
+         lane_bow, club, crew, 
+         rower, penalty, penalty_desc, 
+         time_official, delta, percent, 
+         X.18, cum1, split2, cum2, 
+         split3, cum3, splitF, cum4)
+
+w.alum.8 <- w.alum.8 %>% 
+  rename(split1 = X.18, split4 = splitF)
+
+
+m.chmp.4 <- m.chmp.4 %>% 
+  select(event_id, place, status, 
+         lane_bow, club, crew, 
+         rower, penalty, penalty_desc, 
+         time_official, delta, percent, 
+         split1, cum1, split2, cum2, 
+         split3, cum3, splitF, cum4)
+m.chmp.4 <- m.chmp.4 %>% 
+  rename(split4 = splitF)
+
+
+w.chmp.4 <- w.chmp.4 %>% 
+  select(event_id, place, status, 
+         lane_bow, club, crew, 
+         rower, penalty, penalty_desc, 
+         time_official, delta, percent, 
+         split1, cum1, split2, cum2, 
+         split3, cum3, splitF, cum4)
+w.chmp.4 <- w.chmp.4 %>% 
+  rename(split4 = splitF)
+
+
+m.chmp.8 <- m.chmp.8 %>% 
+  select(event_id, place, status, 
+         lane_bow, club, crew, 
+         rower, penalty, penalty_desc, 
+         time_official, delta, percent, 
+         split1, cum1, split2, cum2, 
+         split3, cum3, splitF, cum4)
+m.chmp.8 <- m.chmp.8 %>% 
+  rename(split4 = splitF)
+
+
+w.chmp.8 <- w.chmp.8 %>% 
+  select(event_id, place, status, 
+         lane_bow, club, crew, 
+         rower, penalty, penalty_desc, 
+         time_official, delta, percent, 
+         split1, cum1, split2, cum2, 
+         split3, cum3, splitF, cum4)
+w.chmp.8 <- w.chmp.8 %>% 
+  rename(split4 = splitF)
+
+
+m.club.4 <- m.club.4 %>% 
+  select(event_id, place, status, 
+         lane_bow, club, crew, 
+         rower, penalty, penalty_desc, 
+         time_official, delta, percent, 
+         split1, cum1, split2, cum2, 
+         split3, cum3, splitF, cum4)
+m.club.4 <- m.club.4 %>% 
+  rename(split4 = splitF)
+
+
+w.club.4 <- w.club.4 %>% 
+  select(event_id, place, status, 
+         lane_bow, club, crew, 
+         rower, penalty, penalty_desc, 
+         time_official, delta, percent, 
+         split1, cum1, split2, cum2, 
+         split3, cum3, splitF, cum4)
+w.club.4 <- w.club.4 %>% 
+  rename(split4 = splitF)
+
+
+m.club.8 <- m.club.8 %>% 
+  select(event_id, place, status, 
+         lane_bow, club, crew, 
+         rower, penalty, penalty_desc, 
+         time_official, delta, percent, 
+         split1, cum1, split2, cum2, 
+         split3, cum3, splitF, cum4)
+m.club.8 <- m.club.8 %>% 
+  rename(split4 = splitF)
+
+
+w.club.8 <- w.club.8 %>% 
+  select(event_id, place, status, 
+         lane_bow, club, crew, 
+         rower, penalty, penalty_desc, 
+         time_official, delta, percent, 
+         split1, cum1, split2, cum2, 
+         split3, cum3, splitF, cum4)
+w.club.8 <- w.club.8 %>% 
+  rename(split4 = splitF)
+
+
+m.coll.4 <- m.coll.4 %>% 
+  select(event_id, place, status, 
+         lane_bow, club, crew, 
+         rower, penalty, penalty_desc, 
+         time_official, delta, percent, 
+         split1, cum1, split2, cum2, 
+         split3, cum3, splitF, cum4)
+m.coll.4 <- m.coll.4 %>% 
+  rename(split4 = splitF)
+
+
+w.coll.4 <- w.coll.4 %>% 
+  select(event_id, place, status, 
+         lane_bow, club, crew, 
+         rower, penalty, penalty_desc, 
+         time_official, delta, percent, 
+         split1, cum1, split2, cum2, 
+         split3, cum3, splitF, cum4)
+w.coll.4 <- w.coll.4 %>% 
+  rename(split4 = splitF)
+
+m.coll.8 <- m.coll.8 %>% 
+  select(event_id, place, status, 
+         lane_bow, club, crew, 
+         rower, penalty, penalty_desc, 
+         time_official, delta, percent, 
+         split1, cum1, split2, cum2, 
+         split3, cum3, splitF, cum4)
+m.coll.8 <- m.coll.8 %>% 
+  rename(split4 = splitF)
+
+w.coll.8 <- w.coll.8 %>% 
+  select(event_id, place, status, 
+         lane_bow, club, crew, 
+         rower, penalty, penalty_desc, 
+         time_official, delta, percent, 
+         split1, cum1, split2, cum2, 
+         split3, cum3, splitF, cum4)
+w.coll.8 <- w.coll.8 %>% 
+  rename(split4 = splitF)
+
+m.lght.4 <- m.lght.4 %>% 
+  select(event_id, place, status, 
+         lane_bow, club, crew, 
+         rower, penalty, penalty_desc, 
+         time_official, delta, percent, 
+         split1, cum1, split2, cum2, 
+         split3, cum3, splitF, cum4)
+m.lght.4 <- m.lght.4 %>% 
+  rename(split4 = splitF)
+
+w.lght.4 <- w.lght.4 %>% 
+  select(event_id, place, status, 
+         lane_bow, club, crew, 
+         rower, penalty, penalty_desc, 
+         time_official, delta, percent, 
+         split1, cum1, split2, cum2, 
+         split3, cum3, splitF, cum4)
+w.lght.4 <- w.lght.4 %>% 
+  rename(split4 = splitF)
+
+m.lght.8 <- m.lght.8 %>% 
+  select(event_id, place, status, 
+         lane_bow, club, crew, 
+         rower, penalty, penalty_desc, 
+         time_official, delta, percent, 
+         split1, cum1, split2, cum2, 
+         split3, cum3, splitF, cum4)
+m.lght.8 <- m.lght.8 %>% 
+  rename(split4 = splitF)
+
+w.lght.8 <- w.lght.8 %>% 
+  select(event_id, place, status, 
+         lane_bow, club, crew, 
+         rower, penalty, penalty_desc, 
+         time_official, delta, percent, 
+         split1, cum1, split2, cum2, 
+         split3, cum3, splitF, cum4)
+w.lght.8 <- w.lght.8 %>% 
+  rename(split4 = splitF)
+
+## let's make the master results sheet
+
+regatta <- bind_rows(list(m.alum.8, w.alum.8, 
+                          m.chmp.4, w.chmp.4, 
+                          m.chmp.8, w.chmp.8,
+                          m.club.4, w.club.4,
+                          m.club.8, w.club.8,
+                          m.coll.4, w.coll.4,
+                          m.coll.8, w.coll.8,
+                          m.lght.4, w.lght.4,
+                          m.lght.8, w.lght.8))
+
+regatta <- regatta %>% 
+  select(event_id, place, status, 
+         lane_bow, club, 
+         rower, penalty, penalty_desc, 
+         time_official, delta, percent, 
+         split1, cum1, split2, cum2, 
+         split3, cum3, split4, cum4)
+
+## Excel created some extra rows, lets drop them
+regatta <- regatta %>% 
+  mutate(event_id = as.character(event_id))
+regatta <- regatta %>%  
+  filter(!is.na(event_id))
+
+## here is the final sheet
+regatta.full <- left_join(regatta, race.details, by = "event_id")
+
+## athletes
+
+## US cities from http://simplemaps.com/resources/us-cities-data 
+## lat long from http://www.latlong.net/
+
+cities <- read.csv(file = "data/cities.csv", head=TRUE, stringsAsFactors = FALSE)
+
+## state abbreviations from: http://www.infoplease.com/ipa/A0110468.html
+
+abbrev <- read.csv(file = "data/state.abbreviations.csv", header = TRUE, stringsAsFactors = FALSE)
+
+clean_text <- function(text){
+  text <- gsub("[^[:alnum:]]", "", text)
+  text <- gsub(" ", "", text)
+  text <- tolower(text)
+  return(text)
+}
+
+cities <- cities %>% 
+  mutate(state.clean = clean_text(state), 
+         city.clean = clean_text(city))
+
+cities.tidy <- cities %>% 
+  mutate(full.name = paste(city.clean,state.clean, sep = ", "))
+
+cities.tidy <- cities.tidy %>% 
+  distinct(full.name)
+
+athletes <- athletes %>% 
+  mutate(state.clean = clean_text(state.province), 
+         city.clean = clean_text(city))
+
+athletes.us <- athletes %>% 
+  filter(country=="US") %>% 
+  group_by(state.clean, city.clean, city, state.province) %>% 
+  tally()
+## drop 75 athletes who did not report their city
+athletes.us <- athletes.us %>% 
+  filter(city!="")
+
+## state abbreviations
+
+abbrev <- abbrev %>% 
+  mutate(state.clean = clean_text(State), 
+         code = clean_text(Postal.Code))
+
+athletes.us <- left_join(athletes.us, abbrev, by=c("state.clean"))
+
+
+athletes <- athletes %>% 
+  mutate(club = as.character(club), 
+         city = as.character(city), 
+         state.province = as.character(state.province),
+         country = as.character(country))
+
+clubs.affiliated <- clubs %>% 
+  filter(club != "Unaffiliated (usa)")
+
+clubs.by.state <- clubs.affiliated %>% 
+  filter(federation=="USA") %>% 
+  group_by(state.province) %>% 
+  tally() %>% 
+  arrange(desc(n))
+clubs.by.state <- clubs.by.state %>% 
+  rename(clubs = n)
+
+athletes.by.state <- athletes %>% 
+  filter(country=="US") %>% 
+  group_by(state.province) %>% 
+  tally() %>% 
+  arrange(desc(n))
+
+athletes.by.state <- athletes.by.state %>% 
+  rename(athletes = n)
+
+
+participation <- left_join(clubs.by.state, athletes.by.state, by = "state.province")
+participation <- participation %>% 
+  mutate(hover = paste("clubs: ", clubs, "<br>",
+                       "athletes: ", athletes))
+participation <- participation %>% 
+  mutate(state.clean = clean_text(state.province))
+participation <- left_join(participation, abbrev, by = c("state.clean"="state.clean"))
+
+athletes.cities <- left_join(athletes.us, cities.tidy, 
+                             by = c("code" = "state.clean", "city.clean" = "city.clean"))
+
+athletes.by.country <- athletes %>% 
+  group_by(country) %>% 
+  tally() %>% 
+  arrange(desc(n))
+
+clubs.by.country <- clubs %>% 
+  group_by(country) %>% 
+  tally() %>% 
+  arrange(desc(n))
+
+r.b.country <- 
+  ggplot(data = athletes.by.country, aes(x=factor(country, levels=unique(country)), y=n))+
+  geom_bar(stat="identity")+
+  ggtitle("HOCR51 Rowers by Country")+
+  ylab("Number of Rowers")+
+  xlab("Country")
+r.b.country
+```
+
+
+Within the United States, most rowers are from the North East and or Eastern Seaboard. 
+
+```{R, echo = FALSE}
+
+map.clubs <- plot_ly(data = participation, z = athletes, text = hover, locations = Postal.Code, type = 'choropleth',
+        locationmode = 'USA-states', color = athletes, colors = 'Purples',
+        marker = list(line = list(color = toRGB("black"), width = 1)), colorbar = list(title = "Number of Rowers")) %>%
+  layout(title = '2015 HOCR Participation by State<br>(Hover for breakdown)', geo = list(
+    scope = 'usa',
+    projection = list(type = 'albers usa'),
+    showlakes = TRUE,
+    lakecolor = toRGB('white')
+  ))
+map.clubs
+```
+
+
+Only 36 of 50 states have rowers participating in the race. 
+
+
+```{R, echo = FALSE, fig_height = 6}
+
+g <- list(
+  scope = 'usa',
+  projection = list(type = 'albers usa'),
+  showland = TRUE,
+  landcolor = toRGB("gray85"),
+  subunitwidth = 1,
+  countrywidth = 1,
+  subunitcolor = toRGB("white"),
+  countrycolor = toRGB("white")
+)
+
+map.all <- plot_ly(athletes.cities, lon = lng, lat = lat, text = paste(full.name, "<br>", n),
+        marker = list(size = n/10),
+        type = 'scattergeo', locationmode = 'USA-states') %>%
+  layout(title = '2015 Head of the Charles Rowers', geo = g)
+map.all
+```
+
+
+The Head of the Charles is a 4800m “head” race in Cambridge, MA. It is a head race because the boats are staggered when they start by their seed and places are determined by times. The course itself is on the Charles River, which has several turns, bridges, and bottlenecks that make the course itself a challenge to navigate. 
+
+
+![](http://i1.wp.com/middleburycrew.org/wp-content/uploads/2013/03/MV8small.png?fit=836%2C836)
+
+
+Before we go any farther, there are a few rowing concepts that need to be clarified. First is the coxswain. In larger boats, 4+s and 8+s, the coxswain is responsible for steering the boat and motivating the rowers. He can either be in the stern (typical in the 8+) or the bow (typical in the 4+). There are also boats that do not have a coxswain, these are often sculling boats (quads, doubles, and singles). In these boats, a rower is responsible for steering and rowing. Second is the concept of the 500 m average split. In order to standardize the concept of speed in crew, it is convention to talk about 500 meter splits. When described as an average for the whole piece (race), an average 500m split says the average time it takes to row 500m. The output looks like “1:50”. In words, it took one minute and 50 second to row 500m on average. This unit of measure has been standardized by use on the erg. 
+
+## Research Questions
+
+The Head of the Charles can be an overwhelmingly complicated and competitive event. It is important to place well, usually defined as finishing in the top half of one’s event (above the median), in order to guarantee an entry in next year’s race. Teams that fail to meet this benchmark lose their bid in the regatta and must reenter the lottery process to receive a bid to race. Schools that fail to maintain their spots in the race have no guarantee of being able to return the previous year. Therefore, it is important for coaches, who have a finite number of rowers, to enter them in events that they can be competitive in to maintain their bids. Therefore, I chose to evaluate which races were the most competitive, so as to better inform coaches how to enter their boats. 
+
+Once I determined which races were most competitive, I focused on determining how a coach should go about making sure that his/her boats are prepared to row a good race. Therefore, I decided to look at in what ways the race course itself effected how the coxswain should steer the race and how the rowers should row the race. 
+
+## Data
+  
+The data used in this paper primarily originated from Regatta Master, which is an online result reporting site used by the Head of the Charles. The website has a function which exports csv files. I used the master results by entry data set, which had information on official times and penalties for all 61 events. However, in order to get detailed results including the four split times, it was necessary to pull each race separately. Therefore, I focused my main split analysis on only 4s and 8s in the club, collegiate, championship, and lightweight categories. I also pulled the event summary sheet, which outlined the details for each race, and the list of clubs which gave the location of each participating club in the regatta. [See Appendix I for more details on the condition of the csv files and how they were read into R.] 
+ 
+The data used to produce the participation maps came from several sources. The data on postal codes was from infoplease.com and the table was directly copied from the website into excel and saved as a csv. The latitude and longitude data came from two sources. Most points came from simplemaps.com, however about 60 points needed to be input by hand from latlong.net directly into the csv file. 
+
+The shape files used to make the race course polygon was made entirely using google maps. Using a printout of the race course and a list of where the umpires were, I input each latitude and longitude point into excel by hand from google maps. I used between four and ten points per penalty zone and ordered them accordingly, by group, to make a shape data frame. Then I simply added the Weld Boathouse line to the shapefile and reordered the point to make the split polygon data frame. 
+  
+## Methodology
+
+The main metric that I use to determine competitiveness is the coefficient of variation (CV), which is equal to the standard deviation over the mean. 
+
+$$CV = \frac{\sigma}{\mu}$$
+
+Although the standard deviation alone can provide a good measure of clustering around the mean, it fails to be comparable between samples with different means. Therefore, in order to compare all the different types of boats and crews it is necessary to “standardize” the standard deviation by dividing it by the sample mean. This allows for a better comparison of relative clutter or dispersion between events. Moreover, the median and average can be computed using the coefficients of variation for all the events in order to make generalizations about the race course and regatta as a whole 
+
+In order to find out which section of the course had the largest effect on the race, I used the z-score of each boat’s finish within the event that it was entered. The z-score is a standardized distribution used to make comparisons of observations within a given sample. The score factors in the observation’s deviation from the mean as well as the standard deviation of the entire distribution. 
+
+$$Z = \frac{x - \mu}{\sigma}$$
+
+In order to evaluate the importance of both negative splitting (rowing each section of the course faster than the last), I computed each boat’s overall z-score and their z-score for each of the four splits, within their event. So, the average boat in each event will have a z-score of zero. I then calculated four dummy variables, one for each split of the course, which are equal to 1 if that section was the given boats fastest piece relative to the other boats in its race. In other words, each boat should have one of the four dummies equal to 1 which corresponds with its segment of the race with the highest z-score. Finally I ran several OLS regressions using the boat’s total (overall) z-score as the independent variable and various combinations of the dummy variables (not all of them so as to avoid issues of multi-collinearity) as dependent variables. I also controlled for the boat’s time in each split as well as the gender of the boat and whether or not it received a penalty. This allowed me to isolate as much as possible the effect of rowing each of the four splits as the fastest. I hypothesized that rowing the third split, which encompasses the large starboard turn, to have the most significant effect on how the boat finished. 
+
+## Results
+
+What events are the most competitive? 
+
+Overall, the events at the Charles range greatly in their competitiveness from the most competitive, Men’s Championship 8+ (cv of .0264), to the least competitive, Mixed Adaptive Legs/Trunk/Arms Fours (cv = .2318). This inherently makes sense because abilities in adaptive rowing vary much more than the world class athletes who can participate in the Championship category (this includes the Ivy League Crews, the University of Washington, UC Berkeley, and the US National Team). It is important to note, however, that competitiveness is not determined by how fast the race was overall, but rather how close together were the boats within that event. If I used a measure that compared raw times, I would be comparing apples and oranges because the times vary by boat type, gender, and age; it wouldn’t be fair to compare masters rowers, Ivy League rowers, and youth rower by raw times alone. 
+
+
+```{r, echo = FALSE, results = "hide"}
+regatta.finishers <- regatta.full %>% 
+  filter(status=="Finished")
+
+##manipulate master sheet times
+
+regatta.master.times <- regatta.finishers %>% 
+  mutate(time_official = as.character(time_official)) %>% 
+  separate(time_official,into = c("O.min", "O.sec"), sep = ":", remove = FALSE, extra = "merge")
+
+regatta.master.times <- regatta.master.times %>%
+  mutate(O.min = as.numeric(O.min), O.sec = as.numeric(O.sec))
+
+regatta.master.times <- regatta.master.times %>%
+  mutate(total.sec = O.min*60 + O.sec)
+
+## Which event was most competative? 
+
+competitiveness <- regatta.master.times %>% 
+  group_by(event.y) %>% 
+  summarise(perc.50 = median(total.sec), avg = mean(total.sec), stnd.dev = sd(total.sec)) %>% 
+  mutate(cv = stnd.dev/avg)
+
+
+## what is the "competative" split? 
+
+competitiveness <- competitiveness %>%
+  mutate(m.per.sec = 4800/perc.50)
+
+competitiveness <- competitiveness %>%
+  mutate(med.split = 500/m.per.sec)
+
+
+## repeat for entire regatta, including singles to determine most competative race
+
+results.times <- results %>% 
+  separate(Raw.Time, into = c("O.min", "O.sec"), sep = 2, remove = FALSE, extra = "merge")
+  
+results.times <- results.times %>%
+  mutate(O.min = as.numeric(O.min), O.sec = as.numeric(O.sec))
+
+results.times <- results.times %>%
+  mutate(total.sec = O.min*60 + O.sec)
+results.times <- results.times %>% 
+  filter(Status == "Finished")
+
+competitiveness.all <- results.times %>% 
+  group_by(Event.Id, Event.Description) %>% 
+  summarise(perc.50 = median(total.sec), avg = mean(total.sec), stnd.dev = sd(total.sec)) %>% 
+  mutate(cv = stnd.dev/avg) %>% 
+  arrange(cv)
+
+competitiveness.all <- competitiveness.all %>%
+  mutate(m.per.sec = 4800/perc.50)
+
+competitiveness.all <- competitiveness.all %>%
+  mutate(med.split = 500/m.per.sec)
+
+competitiveness.all <- competitiveness.all %>% 
+  mutate(med.500.split = ifelse(med.split<120, paste("1", round(med.split-60,1), sep = ":"), 
+                                  ifelse(med.split>=120 & med.split<130, 
+                                         paste("2:0", round(med.split-120,1), sep = ""), 
+                                         paste("2", round(med.split-120,1), sep = ":"))))
+
+competitiveness.all <- competitiveness.all %>% 
+  ungroup() %>% 
+  arrange(cv)
+```
+```{r, echo=FALSE}
+
+comp.by.event <- plot_ly(  data = competitiveness.all,
+  x = Event.Description,
+  y = cv,
+  text = paste(Event.Description, "<br>", "cv: ", round(cv,4), "500m:", med.500.split),
+  title = "Event Competitiveness",
+  type = "bar") %>% 
+  layout( title = "Event Competitiveness", yaxis = list(title = "CV of Raw Times"))
+comp.by.event
+```
+
+```{r, echo=FALSE, warning = FALSE}
+competitiveness.all.order <- competitiveness.all %>% 
+  arrange(cv)
+
+kable(head(competitiveness.all.order), digits = 4)
+```
+
+
+However, that is not to say that the median split is not important. If a coach is deciding between entering a 4 and an 8, he/she needs to be able to judge which boat has the best chance to get above the median boat (in the top half) so as to  maintain the bid. The spread of variance in the median 500 meter splits for each race don’t seems as drastic as the coefficients of variation. However, the median boat in the Championship 8+ pulled a 500 meter split of 1:33 over a 4800m race, which for reference is faster than many collegiate rowers pull a 2000m race on the erg. In fairness, erg scores and water times are loosely comparable at best, but the comparison illuminates just how fast those boats can row. There are significant differences between 4s and 8s as far as boat speed, but knowing the median boat’s split in each event should give coaches a rough estimate of where their crews need to be in order to place well. 
+
+
+```{r, echo=FALSE, warning = FALSE}
+
+competitiveness.all <- competitiveness.all %>% 
+  ungroup() %>% 
+  arrange(med.split)
+split.500.by.event <- plot_ly(  data = competitiveness.all,
+  x = Event.Description,
+  y = med.split,
+  text = paste(Event.Description, "<br>", "cv: ", round(cv,4), "500m:", med.500.split),
+  title = "Events by 500m Split of Median Boat",
+  type = "bar") %>% 
+  layout( title = "Events by 500m Split of Median Boat", yaxis = list(title = "Seconds per 500m"))
+split.500.by.event
+```
+
+## Competitiveness for Men's events
+
+```{r, echo=FALSE, warning = FALSE}
+race.sex.cox <- select(races, event_id, sex, cox)
+competitiveness.all.sex <- left_join(competitiveness.all,
+                                     race.sex.cox,
+                                     by = c("Event.Id" = "event_id"))
+
+men.competitiveness <- filter(competitiveness.all.sex, 
+                              sex == "m")
+
+cme.plot <- ggplot(data = men.competitiveness, 
+                   aes(x=factor(Event.Id, levels=unique(Event.Id)), 
+                       y = cv))+
+  geom_bar(stat = "identity", 
+           aes(text = paste(Event.Description, "<br>", 
+                        "500m:", med.500.split), 
+           fill = cox))+
+  ggtitle("Men's Events by Competitiveness")+
+  xlab("Event ID")+
+  ylab("CV of Times")+
+  geom_hline(yintercept = median(men.competitiveness$cv))
+ggplotly(cme.plot)
+```
+
+Breaking down the results by sex and factoring in which boats are coxed, and which are not, gives a more complete picture of the choice coaches face because excluding a few mixed events women and men compete separately. It is interesting to note that four of the five most competitive men’s event are in coxed boats. Moreover, it seems to be the case that 4s and 8s for men are generally more competitive than skulled (uncoxed) events like the quad or singles. 
+
+## Competitiveness for Women's events
+
+```{r, echo = FALSE, warning = FALSE}
+women.competitiveness <- filter(competitiveness.all.sex, 
+                              sex == "w")
+women.competitiveness <- women.competitiveness %>% 
+  ungroup %>% 
+  arrange(cv)
+
+cwe.plot <- ggplot(data = women.competitiveness, 
+                   aes(x=factor(Event.Id, levels=unique(Event.Id)), 
+                       y = cv))+
+  geom_bar(stat = "identity", 
+           aes(text = paste(Event.Description, "<br>", 
+                        "500m:", med.500.split), 
+           fill = cox))+
+  ggtitle("Women's Events by Competitiveness")+
+  xlab("Event ID")+
+  ylab("CV of Raw Times")+
+   geom_hline(yintercept = median(women.competitiveness$cv))
+ggplotly(cwe.plot)
+```
+
+
+For Women, this doesn’t seem to be the case. Three of the five most competitive events for women are actually uncoxed events. This seems a little counter intuitive because, at least in collegiate rowing in the US, a large emphasis is placed on rowing 4s and 8s. Moreover, it is often unsafe to row smaller boats in the North East because they are more likely to flip which is dangerous in the cold. 
+
+## How should the course be navigated? 
+
+I decided to use penalties to analyze the race course itself because in coxed boats they are rarely unforced (especially because I have thrown out the youth divisions in my detailed analysis). 
+
+
+```{r, echo = FALSE, fig.height=4}
+penalty.by.race <- results %>% 
+  mutate(penalty.y.n = ifelse(Penalty > 0, 1, 0)) 
+
+penalty.by.race <- penalty.by.race %>% 
+  group_by(Event.Id, Event.Description) %>% 
+  summarise(num.pen = sum(penalty.y.n)) 
+
+races <- races %>% 
+  mutate(event_id = as.character(event_id))
+
+penalty.by.race <- left_join(penalty.by.race, races, by  = c("Event.Id" = "event_id")) 
+
+penalty.by.race <- penalty.by.race %>% 
+  select(Event.Id, Event.Description, num.pen, entries, cox)
+
+penalty.by.race <- penalty.by.race %>% 
+  mutate(perc.pen = as.numeric(round(num.pen/entries, 2)))
+
+penalty.by.race <- penalty.by.race %>%
+  ungroup() %>% 
+  arrange(desc(perc.pen))
+
+pen.by.race.plot <- ggplot(data = penalty.by.race, aes(x=factor(Event.Id, levels=unique(Event.Id)), y = perc.pen))+
+  geom_bar(stat = "identity", aes(fill = cox, 
+                                  text = paste(
+                                    Event.Description, "<br>",
+                                    "Entries: ", entries)))+
+  ggtitle("Penalties by Race")+
+  xlab("Event Number")+
+  ylab("Percentage of Boats Receiving a Penalty")
+ggplotly(pen.by.race.plot)
+```
+
+
+This plot clearly shows that coxed boats are much less likely to commit a penalty.
+
+## The Course
+
+The course itself starts at the Boston University (BU) boathouse and continues up river to the park past the Belmont Hill Boathouse. Along the way there are several turns, and the course varies in width as well. 
+
+
+```{r, echo = FALSE}
+start.finish.map <- leaflet() %>% 
+  addTiles() %>% 
+  addPopups(-71.10782, 42.35294, "Start, BU Boathouse") %>% 
+  addPopups(-71.13654, 42.36736, "Finish")
+start.finish.map
+```
+
+[You may need to zoom out]
+
+In the plot below, I plotted the different areas that correspond to the various penalty codes reported in the detailed race results. 
+
+```{r, echo = FALSE}
+markers.map <- leaflet(data = markers) %>% 
+  addTiles() %>%
+  addMarkers(~long, ~lat, popup = ~name)
+markers.map
+```
+
+There are three types of penalties that show up in my analysis: interference or failure to yield (IN), buoy violations (G, R, W), and arch violations (A). I am assuming that the coxswains did their due diligence and studied the rules ahead of time, and therefore none of these errors were unforced. This shouldn’t be a big stretch because I am throwing out the youth coxswains and the masters coxswains and only focusing on the most competitive races in 4s and 8s. 
+
+## Where do Penalties Happen? 
+
+```{r, echo = FALSE, warning=FALSE, fig.height=4}
+penalty.by.loc <- regatta.full %>% 
+  filter(penalty!="")
+
+penalty.by.loc <- penalty.by.loc %>% 
+  separate(penalty_desc,into = c("p.1", "p.2", "p.3"), sep = ",", remove = FALSE, extra = "merge")
+
+penalty.by.loc <- penalty.by.loc %>% 
+  select(event_id, club, p.1,p.2,p.3)
+
+penalty.by.loc <- penalty.by.loc %>% 
+  mutate(p.ext = ifelse(p.1 == "8-BG(2)", "8-BG", NA))
+
+penalty.by.loc <- penalty.by.loc %>% 
+  gather(key = p.num, value = penalty, p.1:p.ext)
+
+penalty.by.loc <- penalty.by.loc %>% 
+  filter(!is.na(penalty))
+
+penalty.loc <- penalty.by.loc %>% 
+  separate(penalty, into = c("p.loc","p.type"), sep = "-", remove = FALSE, extra = "merge")
+
+penalty.loc <- penalty.loc %>% 
+  mutate(loc = as.numeric(ifelse(p.loc=="7A",7,p.loc)))
+
+penalty.loc <- penalty.loc %>% 
+  group_by(loc) %>% 
+  tally()
+penalty.markers <- left_join(penalty.markers, penalty.loc, by = c("group"="loc"))
+penalty.markers <- penalty.markers %>% 
+  mutate(n = ifelse(is.na(n), 0, n))
+
+penalty.map <- ggplot(penalty.markers, aes(x=long, y=lat, group=group)) +
+  labs(x="longitude", y="latitude", title="Penalties by Location for Coxed Boats") +
+  coord_map() +
+  geom_polygon(aes(fill=n, text = paste(name))) +
+  geom_path()
+ggplotly(penalty.map)
+```
+
+Interestingly, I found that most of the penalties occurred around Anderson Bridge, which is just before the “big turn” and following the “power house” straightaway. This is split includes the Weld Boathouse which is the split point between the second and third splits (the Weld Split and the Cambridge Split). The penalties could be centered here for a few reasons. First, because the boats are staggered at the start the boats that can pass need time to gain ground on the boats ahead of them. Second, this is in the middle of two turns, one to port and the other to starboard, which creates a corkscrew. Therefore, coxswain may be trying to minimize the distance rowed and therefore cut across more of the boats to gain position for the “big turn” to starboard. Finally, the “big turn” is infamous because it is very narrow and so long. Therefore getting the inside line on the buoys is very important. This could be causing coxswains to take aggressive lines to set up a good turn.   
+
+## How should the course be rowed? 
+
+Overall, there wasn’t as much variation between the coefficients of variation when broken up by section of the race. After taking the median and average of the coefficients of Variation for each race, the median coefficient of variation was lowest at the beginning of the race and highest in the third split (Cambridge). There were varying degrees of rightward skewness in the distribution of all the splits (the mean was greater than the median). However, in most races, there was greater variation in the third split which encompasses the “big turn”. This supports the results we found in the penalty data, because boats are shuffling for a good line around Anderson Bridge which leads to greater variation in the Cambridge split and more penalties around Anderson. 
+
+
+```{r, echo = FALSE, warning = FALSE}
+split.eval <- regatta.master.times %>% 
+  separate(split1, into = c("s1.min", "s1.sec"), sep = ":", remove = FALSE, extra = "merge")
+
+split.eval <- split.eval %>%
+  mutate(s1.min = as.numeric(s1.min), s1.sec = as.numeric(s1.sec))
+
+split.eval <- split.eval %>%
+  mutate(s1.total.sec = s1.min*60 + s1.sec)
+
+## repeat for the rest of the splits
+## Weld, split 2
+split.eval <- split.eval %>% 
+  separate(split2, into = c("s2.min", "s2.sec"), sep = ":", remove = FALSE, extra = "merge")
+
+split.eval <- split.eval %>%
+  mutate(s2.min = as.numeric(s2.min), s2.sec = as.numeric(s2.sec))
+
+split.eval <- split.eval %>%
+  mutate(s2.total.sec = s2.min*60 + s2.sec)
+## Cambridge, Split 3
+split.eval <- split.eval %>% 
+  separate(split3, into = c("s3.min", "s3.sec"), sep = ":", remove = FALSE, extra = "merge")
+
+split.eval <- split.eval %>%
+  mutate(s3.min = as.numeric(s3.min), s3.sec = as.numeric(s3.sec))
+
+split.eval <- split.eval %>%
+  mutate(s3.total.sec = s3.min*60 + s3.sec)
+## Finish, split 4
+split.eval <- split.eval %>% 
+  separate(split4, into = c("s4.min", "s4.sec"), sep = ":", remove = FALSE, extra = "merge")
+
+split.eval <- split.eval %>%
+  mutate(s4.min = as.numeric(s4.min), s4.sec = as.numeric(s4.sec))
+
+split.eval <- split.eval %>%
+  mutate(s4.total.sec = s4.min*60 + s4.sec)
+## Group by race, calculate cv, then take average cv for each split
+
+split.eval.cv <- split.eval %>% 
+  group_by(event_id, event.x) %>% 
+  summarise(s1.avg = mean(s1.total.sec), s1.stnd.dev = sd(s1.total.sec),
+            s2.avg = mean(s2.total.sec), s2.stnd.dev = sd(s2.total.sec),
+            s3.avg = mean(s3.total.sec), s3.stnd.dev = sd(s3.total.sec),
+            s4.avg = mean(s4.total.sec), s4.stnd.dev = sd(s4.total.sec)) %>% 
+  mutate(s1.cv = s1.stnd.dev/s1.avg,
+         s2.cv = s2.stnd.dev/s2.avg,
+         s3.cv = s3.stnd.dev/s3.avg,
+         s4.cv = s4.stnd.dev/s4.avg)
+## not condensing into one row
+sum.split.eval.cv <- split.eval.cv %>% 
+  summarise(s1.med.cv = median(s1.cv), s1.avg.cv = mean(s1.cv),
+            s2.med.cv = median(s2.cv), s2.avg.cv = mean(s2.cv),
+            s3.med.cv = median(s3.cv), s3.avg.cv = mean(s3.cv),
+            s4.med.cv = median(s4.cv), s4.avg.cv = mean(s4.cv))
+sum.split.eval.cv.test <- split.eval.cv %>% 
+  summarise_each(funs(median, mean), s1.cv, s2.cv, s3.cv, s4.cv)
+## try gather then group
+sum.split.eval.cv.med <- split.eval.cv %>% 
+  select(event_id, s1.cv, s2.cv, s3.cv, s4.cv) %>% 
+  gather(key = split, value = cv, s1.cv:s4.cv) %>% 
+  group_by(split) %>% 
+  summarize(med.cv = median(cv))
+sum.split.eval.cv.avg <- split.eval.cv %>% 
+  select(event_id, s1.cv, s2.cv, s3.cv, s4.cv) %>% 
+  gather(key = split, value = cv, s1.cv:s4.cv) %>% 
+  group_by(split) %>% 
+  summarize(avg.cv = mean(cv))
+sum.split.eval.cv.both <- left_join(sum.split.eval.cv.avg, sum.split.eval.cv.med,
+                                    by = "split")
+## merge with polygons
+sum.split.eval.cv.both <- sum.split.eval.cv.both %>% 
+  mutate(group = ifelse(split == "s1.cv", 1, 
+                        ifelse(split == "s2.cv",2,
+                               ifelse(split == "s3.cv",3,
+                                      ifelse(split =="s4.cv", 4,0)))))
+split.polygons <- left_join(split.polygons, sum.split.eval.cv.both, by = "group")
+
+split.map.med <- ggplot(split.polygons, aes(x=long, y=lat, group=group)) +
+  labs(x="longitude", y="latitude", title="Median CV of splits") +
+  coord_map() +
+  geom_polygon(aes(fill = med.cv, text = paste(split.x, "<br>",
+                                               "Median: ", round(med.cv,4), "<br>",
+                                               "Average: ", round(avg.cv, 4))))  +
+  geom_path()
+ggplotly(split.map.med)
+```
+
+```{r, echo=FALSE, message = FALSE, warning = FALSE}
+kable(sum.split.eval.cv.both, digits = 4)
+```
+
+Even so, the question of how best to row the course has not completely been answered. Do boats negative split the course like rowers should on the erg? Is performance in one portion of the race determinant of performance overall? 
+
+## Z-score Analysis
+
+In order to investigate this relationship I used a simple OLS multiple regression. I decided to control for boat speed, penalties, and sex in order to look at which section of the course had the most influence on the boats relative position in the race as shown by its z-score. I found that boats that rowed their best split to start (the z-score of their start was higher than that of their other three splits) did better (Adjusted R-squared = .5135). The F-statistic for the model was significant at a 1% level. Interestingly, the coefficient for boats who rowed their third split as their fastest split was insignificant. Overall, it appears that those boats that were able to do relatively better in the beginning of the race, from the start line to Riverside Boathouse, did better than boats that had their better sections towards the end. 
+
+```{r, echo=FALSE, message = FALSE, warning = FALSE}
+split.eval.14 <- split.eval %>% 
+  filter(event_id=="14") %>% 
+  select(club, penalty, sex, 
+         total.sec, s1.total.sec, 
+         s2.total.sec, s3.total.sec, s4.total.sec) %>% 
+  mutate(total.z = (total.sec - mean(total.sec))/sd(total.sec),
+         s1.z = (s1.total.sec - mean(s1.total.sec))/sd(s1.total.sec),
+         s2.z = (s2.total.sec - mean(s2.total.sec))/sd(s2.total.sec),
+         s3.z = (s3.total.sec - mean(s3.total.sec))/sd(s3.total.sec),
+         s4.z = (s4.total.sec - mean(s4.total.sec))/sd(s4.total.sec),
+         female = ifelse(sex == "w", 1, 0),
+         pen.y.n = ifelse(penalty == "", 0,
+                          ifelse(is.na(penalty), 0, 1))
+         )
+
+split.eval.15 <- split.eval %>% 
+  filter(event_id=="15") %>% 
+  select(club, penalty, sex, 
+         total.sec, s1.total.sec, 
+         s2.total.sec, s3.total.sec, s4.total.sec) %>% 
+  mutate(total.z = (total.sec - mean(total.sec))/sd(total.sec),
+         s1.z = (s1.total.sec - mean(s1.total.sec))/sd(s1.total.sec),
+         s2.z = (s2.total.sec - mean(s2.total.sec))/sd(s2.total.sec),
+         s3.z = (s3.total.sec - mean(s3.total.sec))/sd(s3.total.sec),
+         s4.z = (s4.total.sec - mean(s4.total.sec))/sd(s4.total.sec),
+         female = ifelse(sex == "w", 1, 0),
+         pen.y.n = ifelse(penalty == "", 0,
+                          ifelse(is.na(penalty), 0, 1))
+  )
+
+split.eval.26 <- split.eval %>% 
+  filter(event_id=="26") %>% 
+  select(club, penalty, sex, 
+         total.sec, s1.total.sec, 
+         s2.total.sec, s3.total.sec, s4.total.sec) %>% 
+  mutate(total.z = (total.sec - mean(total.sec))/sd(total.sec),
+         s1.z = (s1.total.sec - mean(s1.total.sec))/sd(s1.total.sec),
+         s2.z = (s2.total.sec - mean(s2.total.sec))/sd(s2.total.sec),
+         s3.z = (s3.total.sec - mean(s3.total.sec))/sd(s3.total.sec),
+         s4.z = (s4.total.sec - mean(s4.total.sec))/sd(s4.total.sec),
+         female = ifelse(sex == "w", 1, 0),
+         pen.y.n = ifelse(penalty == "", 0,
+                          ifelse(is.na(penalty), 0, 1))
+  )
+
+split.eval.27 <- split.eval %>% 
+  filter(event_id=="27") %>% 
+  select(club, penalty, sex, 
+         total.sec, s1.total.sec, 
+         s2.total.sec, s3.total.sec, s4.total.sec) %>% 
+  mutate(total.z = (total.sec - mean(total.sec))/sd(total.sec),
+         s1.z = (s1.total.sec - mean(s1.total.sec))/sd(s1.total.sec),
+         s2.z = (s2.total.sec - mean(s2.total.sec))/sd(s2.total.sec),
+         s3.z = (s3.total.sec - mean(s3.total.sec))/sd(s3.total.sec),
+         s4.z = (s4.total.sec - mean(s4.total.sec))/sd(s4.total.sec),
+         female = ifelse(sex == "w", 1, 0),
+         pen.y.n = ifelse(penalty == "", 0,
+                          ifelse(is.na(penalty), 0, 1))
+  )
+
+split.eval.46 <- split.eval %>% 
+  filter(event_id=="46") %>% 
+  select(club, penalty, sex, 
+         total.sec, s1.total.sec, 
+         s2.total.sec, s3.total.sec, s4.total.sec) %>% 
+  mutate(total.z = (total.sec - mean(total.sec))/sd(total.sec),
+         s1.z = (s1.total.sec - mean(s1.total.sec))/sd(s1.total.sec),
+         s2.z = (s2.total.sec - mean(s2.total.sec))/sd(s2.total.sec),
+         s3.z = (s3.total.sec - mean(s3.total.sec))/sd(s3.total.sec),
+         s4.z = (s4.total.sec - mean(s4.total.sec))/sd(s4.total.sec),
+         female = ifelse(sex == "w", 1, 0),
+         pen.y.n = ifelse(penalty == "", 0,
+                          ifelse(is.na(penalty), 0, 1))
+  )
+
+split.eval.47 <- split.eval %>% 
+  filter(event_id=="47") %>% 
+  select(club, penalty, sex, 
+         total.sec, s1.total.sec, 
+         s2.total.sec, s3.total.sec, s4.total.sec) %>% 
+  mutate(total.z = (total.sec - mean(total.sec))/sd(total.sec),
+         s1.z = (s1.total.sec - mean(s1.total.sec))/sd(s1.total.sec),
+         s2.z = (s2.total.sec - mean(s2.total.sec))/sd(s2.total.sec),
+         s3.z = (s3.total.sec - mean(s3.total.sec))/sd(s3.total.sec),
+         s4.z = (s4.total.sec - mean(s4.total.sec))/sd(s4.total.sec),
+         female = ifelse(sex == "w", 1, 0),
+         pen.y.n = ifelse(penalty == "", 0,
+                          ifelse(is.na(penalty), 0, 1))
+  )
+
+split.eval.48 <- split.eval %>% 
+  filter(event_id=="48") %>% 
+  select(club, penalty, sex, 
+         total.sec, s1.total.sec, 
+         s2.total.sec, s3.total.sec, s4.total.sec) %>% 
+  mutate(total.z = (total.sec - mean(total.sec))/sd(total.sec),
+         s1.z = (s1.total.sec - mean(s1.total.sec))/sd(s1.total.sec),
+         s2.z = (s2.total.sec - mean(s2.total.sec))/sd(s2.total.sec),
+         s3.z = (s3.total.sec - mean(s3.total.sec))/sd(s3.total.sec),
+         s4.z = (s4.total.sec - mean(s4.total.sec))/sd(s4.total.sec),
+         female = ifelse(sex == "w", 1, 0),
+         pen.y.n = ifelse(penalty == "", 0,
+                          ifelse(is.na(penalty), 0, 1))
+  )
+
+split.eval.49 <- split.eval %>% 
+  filter(event_id=="49") %>% 
+  select(club, penalty, sex, 
+         total.sec, s1.total.sec, 
+         s2.total.sec, s3.total.sec, s4.total.sec) %>% 
+  mutate(total.z = (total.sec - mean(total.sec))/sd(total.sec),
+         s1.z = (s1.total.sec - mean(s1.total.sec))/sd(s1.total.sec),
+         s2.z = (s2.total.sec - mean(s2.total.sec))/sd(s2.total.sec),
+         s3.z = (s3.total.sec - mean(s3.total.sec))/sd(s3.total.sec),
+         s4.z = (s4.total.sec - mean(s4.total.sec))/sd(s4.total.sec),
+         female = ifelse(sex == "w", 1, 0),
+         pen.y.n = ifelse(penalty == "", 0,
+                          ifelse(is.na(penalty), 0, 1))
+  )
+
+split.eval.50 <- split.eval %>% 
+  filter(event_id=="50") %>% 
+  select(club, penalty, sex, 
+         total.sec, s1.total.sec, 
+         s2.total.sec, s3.total.sec, s4.total.sec) %>% 
+  mutate(total.z = (total.sec - mean(total.sec))/sd(total.sec),
+         s1.z = (s1.total.sec - mean(s1.total.sec))/sd(s1.total.sec),
+         s2.z = (s2.total.sec - mean(s2.total.sec))/sd(s2.total.sec),
+         s3.z = (s3.total.sec - mean(s3.total.sec))/sd(s3.total.sec),
+         s4.z = (s4.total.sec - mean(s4.total.sec))/sd(s4.total.sec),
+         female = ifelse(sex == "w", 1, 0),
+         pen.y.n = ifelse(penalty == "", 0,
+                          ifelse(is.na(penalty), 0, 1))
+  )
+
+split.eval.51<- split.eval %>% 
+  filter(event_id=="51") %>% 
+  select(club, penalty, sex, 
+         total.sec, s1.total.sec, 
+         s2.total.sec, s3.total.sec, s4.total.sec) %>% 
+  mutate(total.z = (total.sec - mean(total.sec))/sd(total.sec),
+         s1.z = (s1.total.sec - mean(s1.total.sec))/sd(s1.total.sec),
+         s2.z = (s2.total.sec - mean(s2.total.sec))/sd(s2.total.sec),
+         s3.z = (s3.total.sec - mean(s3.total.sec))/sd(s3.total.sec),
+         s4.z = (s4.total.sec - mean(s4.total.sec))/sd(s4.total.sec),
+         female = ifelse(sex == "w", 1, 0),
+         pen.y.n = ifelse(penalty == "", 0,
+                          ifelse(is.na(penalty), 0, 1))
+  )
+
+split.eval.52 <- split.eval %>% 
+  filter(event_id=="52") %>% 
+  select(club, penalty, sex, 
+         total.sec, s1.total.sec, 
+         s2.total.sec, s3.total.sec, s4.total.sec) %>% 
+  mutate(total.z = (total.sec - mean(total.sec))/sd(total.sec),
+         s1.z = (s1.total.sec - mean(s1.total.sec))/sd(s1.total.sec),
+         s2.z = (s2.total.sec - mean(s2.total.sec))/sd(s2.total.sec),
+         s3.z = (s3.total.sec - mean(s3.total.sec))/sd(s3.total.sec),
+         s4.z = (s4.total.sec - mean(s4.total.sec))/sd(s4.total.sec),
+         female = ifelse(sex == "w", 1, 0),
+         pen.y.n = ifelse(penalty == "", 0,
+                          ifelse(is.na(penalty), 0, 1))
+  )
+
+split.eval.53 <- split.eval %>% 
+  filter(event_id=="53") %>% 
+  select(club, penalty, sex, 
+         total.sec, s1.total.sec, 
+         s2.total.sec, s3.total.sec, s4.total.sec) %>% 
+  mutate(total.z = (total.sec - mean(total.sec))/sd(total.sec),
+         s1.z = (s1.total.sec - mean(s1.total.sec))/sd(s1.total.sec),
+         s2.z = (s2.total.sec - mean(s2.total.sec))/sd(s2.total.sec),
+         s3.z = (s3.total.sec - mean(s3.total.sec))/sd(s3.total.sec),
+         s4.z = (s4.total.sec - mean(s4.total.sec))/sd(s4.total.sec),
+         female = ifelse(sex == "w", 1, 0),
+         pen.y.n = ifelse(penalty == "", 0,
+                          ifelse(is.na(penalty), 0, 1))
+  )
+
+split.eval.54 <- split.eval %>% 
+  filter(event_id=="54") %>% 
+  select(club, penalty, sex, 
+         total.sec, s1.total.sec, 
+         s2.total.sec, s3.total.sec, s4.total.sec) %>% 
+  mutate(total.z = (total.sec - mean(total.sec))/sd(total.sec),
+         s1.z = (s1.total.sec - mean(s1.total.sec))/sd(s1.total.sec),
+         s2.z = (s2.total.sec - mean(s2.total.sec))/sd(s2.total.sec),
+         s3.z = (s3.total.sec - mean(s3.total.sec))/sd(s3.total.sec),
+         s4.z = (s4.total.sec - mean(s4.total.sec))/sd(s4.total.sec),
+         female = ifelse(sex == "w", 1, 0),
+         pen.y.n = ifelse(penalty == "", 0,
+                          ifelse(is.na(penalty), 0, 1))
+  )
+
+split.eval.55 <- split.eval %>% 
+  filter(event_id=="55") %>% 
+  select(club, penalty, sex, 
+         total.sec, s1.total.sec, 
+         s2.total.sec, s3.total.sec, s4.total.sec) %>% 
+  mutate(total.z = (total.sec - mean(total.sec))/sd(total.sec),
+         s1.z = (s1.total.sec - mean(s1.total.sec))/sd(s1.total.sec),
+         s2.z = (s2.total.sec - mean(s2.total.sec))/sd(s2.total.sec),
+         s3.z = (s3.total.sec - mean(s3.total.sec))/sd(s3.total.sec),
+         s4.z = (s4.total.sec - mean(s4.total.sec))/sd(s4.total.sec),
+         female = ifelse(sex == "w", 1, 0),
+         pen.y.n = ifelse(penalty == "", 0,
+                          ifelse(is.na(penalty), 0, 1))
+  )
+
+master.split.z <- bind_rows(list(split.eval.14, split.eval.15,
+                                 split.eval.26, split.eval.27,
+                                 split.eval.46, split.eval.47,
+                                 split.eval.48, split.eval.49,
+                                 split.eval.50, split.eval.51,
+                                 split.eval.52, split.eval.53,
+                                 split.eval.54, split.eval.55))
+
+master.split.z <- master.split.z %>% 
+  mutate(s1.fastest = ifelse((s1.z > s2.z) & (s1.z > s3.z) & (s1.z > s4.z), 1, 0),
+         s2.fastest = ifelse((s2.z > s1.z) & (s2.z > s3.z) & (s2.z > s4.z), 1, 0),
+         s3.fastest = ifelse((s3.z > s1.z) & (s3.z > s2.z) & (s3.z > s4.z), 1, 0),
+         s4.fastest = ifelse((s4.z > s1.z) & (s4.z > s2.z) & (s4.z > s3.z), 1, 0)
+  )
+  
+## the model 
+## using continous z-scores
+
+reg.1 <- lm(data = master.split.z, total.z ~ 
+              s3.z + female + pen.y.n)
+
+reg.2 <- lm(data = master.split.z, total.z ~ 
+                 s1.z + s2.z + s3.z + s4.z +
+                 female + pen.y.n)
+
+reg.3 <- lm(data = master.split.z, total.z ~ s1.total.sec +
+              s2.total.sec + s3.total.sec + s4.total.sec +
+              female+ pen.y.n)
+
+reg.4 <- lm(data = master.split.z, total.z ~ s1.total.sec +
+              s2.total.sec + s3.total.sec + s4.total.sec +
+              s2.fastest + s3.fastest + s4.fastest +
+              female+ pen.y.n)
+
+reg.5 <- lm(data = master.split.z, total.z ~ s1.total.sec +
+              s2.total.sec + s3.total.sec + s4.total.sec +
+              s1.fastest + s2.fastest + s4.fastest +
+              female+ pen.y.n)
+
+reg.6 <- lm(data = master.split.z, total.z ~ s1.total.sec +
+              s2.total.sec + s3.total.sec + s4.total.sec +
+              s1.fastest + s2.fastest + s3.fastest +
+              female+ pen.y.n)
+
+kable(summary(reg.4)$coef, digits=3)
+```
+
+
+This is indicative of just how important a good line is for the Charles. Boats that are able to get a good line, even though they might be out pulled later on in the race, are able to finish better than those boats that started off slower. An interesting nuance of rowing could also play into this result. The Charles is a head race, and therefore in order to see another boat you need to either catch one or be caught. Seeing another boat, especially passing one, is a huge motivator for a rower, so it makes sense that boats that were able to row better in the beginning, alone, where able to catch boats and were motivated to row faster. Moreover, as boats were being passed, they also had increased incentive to row faster because they know just how embarrassing being passed is. Moreover, if a boat can row faster in the beginning, they are set up for a better line at the Anderson Bridge and therefor on the “big turn”. So, to answer the original question, positioning matter a lot in the Charles and therefore it could be wise to try to get a strong start while motivation is lower and trust that a crew won’t “fly and die” like the University of Delaware Men’s Collegiate 4 (see appendix). 
+
+```{r, echo = FALSE}
+sum.split.z <- master.split.z %>% 
+  summarise(avg.1.fast = mean(s1.fastest),
+            avg.2.fast = mean(s2.fastest),
+            avg.3.fast = mean(s3.fastest),
+            avg.4.fast = mean(s4.fastest))
+kable(sum.split.z, digits=3)
+```
+
+
+In the above table, we can see that 32% of boats rowed the first split the fastes, whereas only 18.7% of boats rowed the "big turn" (Split 3) as their fastest split relative to other boats. 
+
+## Discussion 
+
+There are a few important details to note about the results of this analysis. First and foremost, weather was implicitly assumed to be constant for each race, which is not necessarily true. Each race to around sixteen to twenty minutes and the boats were starting at different times. Therefore the winds could have shifted during the race and effected different crews in different ways. Rowing in a headwind can help set up heavier boats in the water, but hurt lighter crews. Whereas tailwinds can help lighter crews more than heavier crews. Cross winds tend to help nobody. Over the Three days of the Charles, the wind, temperature, and current were all in flux and it is a very inaccurate science to analyze how the conditions affected each race. Moreover, there is no way to know what the conditions will be like in any given year. Therefore, it would be good to repeat the regression including data on previous year in order to have time fixed effects. 
+
+In addition to weather data, it would be interesting to look at how individuals’ ages affected their performance at the Charles, however the data on ages was incomplete. Rowing experience, erg scores, weight, height, and a number of other physical characteristics would be interesting to look at in order to see what types of athletes perform best in the race. Unfortunately, this information has not been collected although a rowers survey could be an interesting addition to the Charles in the future. 
+
+## Conclusion
+
+Overall, this paper shows that a large amount of thought and preparation, on the part of the coach, needs to happen in order to have a successful race. Entering your rowers in competitive boats is step one. Then knowing how to instruct your rowers and coxswain to tackle the race itself is incredibly important. It is apparent that boats that are able to take advantage of the power house straightaway in the first split of the race are able to get better lines and positions that allow them to finish higher in the distribution. Moreover, passing for position around Anderson Bridge can be seen in the concentration of penalties at that point in the course. All in all, the course has a dramatic effect on how the race is best rowed and it is not necessarily best to negative split if it means giving up the best line. 
+
+## Acknowledgments 
+
+Prof. Albert Kim, it is impossible to cite the amount of code used from lectures and office hours. 
+Coach Adam Askham for assisting with penalty interpretations and developing research questions. 
+Brendan Mulvey, The Head of the Charles Regatta, for providing details on penalty codes and umpire location. 
+
+
+## References and links
+
+Results, times, club info
+http://online.regattamaster.com/Pages/Regatta.aspx?regattaID=1176 
+
+US Postal Codes
+http://www.infoplease.com/ipa/A0110468.html
+
+City Coordinates
+http://simplemaps.com/resources/us-cities-data 
+http://www.latlong.net/ 
+
+Race Course Polygon
+https://www.google.com/maps?biw=1366&bih=635&q=bu+boathouse&bav=on.2,or.r_cp.&bvm=bv.122676328,d.dmo&sns=1&um=1&ie=UTF-8&sa=X&sqi=2&ved=0ahUKEwigoKCLve_MAhWIsh4KHVqTApgQ_AUIBigB
+
+Penalty Codes
+http://d1t9tp9vr9l3g2.cloudfront.net/wp-content/uploads/2014/10/2014-Media-Guide.pdf
+
+
+## Appendix I: Notes on Data
+
+The csv files pulled from Regatta Master had numerous formatting irregularities that made them impossible to directly read into R. Several extra rows and columns were added in order to make the sheet easy to look at, but not easy to input into R. Therefore, I used the basic steps (outlined below) to alter each sheet. A single VBA macro could not be written because each sheet was formatted differently. 
+
+1.	Clear all formats
+2.	Copy event number
+3.	Paste event number in every cell of the first column (already empty)
+4.	Delete all event information in the top rows 
+5.	Paste standardized list of new column names to make selecting them in R more uniform (Leaving the extra columns because a simple select() command will sort them out later)
+6.	Read into R as a csv
+
+
+## Apenddix II : How did Midd Do? 
+
+In the 51st Head of the Charles, Middlebury College entered two men’s collegiate fours and one women’s collegiate 8. 
+
+```{r, echo = FALSE}
+
+midd.men <- regatta.master.times %>% 
+  filter(event_id == "26")
+
+midd.men.hist <- ggplot(data = midd.men, aes(x=total.sec))+
+  geom_histogram(binwidth = 10, aes(text = 
+                                      paste("Club: ", club,
+                                            "<br>", "Place: ",
+                                            place,"<br>",
+                                            "Time: ",                                                time_official)))+
+  ggtitle("Event 26: Men's Collegiate 4+")+
+  geom_vline(xintercept = median(midd.men$total.sec), 
+             aes(text = paste("Median Boat")))+
+  geom_vline(xintercept = 1091.687, color = "blue")+
+  geom_vline(xintercept = 1122.187, color = "#00BCD8")
+ggplotly(midd.men.hist)
+```
+
+The above interactive histogram shows the distribution of official times for the Men’s Collegiate 4s. Middlebury’s first boat finished in 18th and retained its bid by finishing above the median boat. The second men’s four finished 34th and lost its bid for the 52nd HOCR. The black line represents the median boat, and the blue lines show the two Middlebury 4s. 
+
+```{r, echo = FALSE, warning = FALSE, fig.height=4}
+midd.men.split <- split.eval %>% 
+  filter(event_id == "26") %>% 
+  select(place, club, s1.total.sec, 
+         s2.total.sec, s3.total.sec, s4.total.sec) %>% 
+  gather(key = split, value = total.sec, s1.total.sec:s4.total.sec)
+
+midd.men.split <- midd.men.split %>% 
+  mutate(split = ifelse(split=="s1.total.sec", "1: Riverside",
+                        ifelse(split=="s2.total.sec", "2: Weld",
+                               ifelse(split=="s3.total.sec",
+                                      "3: Cambridge",
+             ifelse(split=="s4.total.sec","4: Finish",0)))))
+
+midd.men.split.wrap <- 
+  ggplot(data = midd.men.split, aes(x=total.sec, fill = place))+
+    geom_histogram(aes(text = paste(place,": ", club)))+
+    scale_fill_gradient()+
+    facet_wrap(~split, scales = "free")+
+    ggtitle("Event 26: Men's College 4+")
+ggplotly(midd.men.split.wrap)
+  
+```
+
+The above interactive wrap of distributions shows how the distribution changed throughout the race. Interestingly, the second Middlebury 4 did very well on “the big” turn most likely because they got a favorable line. 
+
+Interestingly, Middlebury’s top boat had a very good 2nd split (Weld). 
+
+```{r, echo = FALSE}
+midd.women <- regatta.master.times %>% 
+  filter(event_id == "51")
+
+midd.women.hist <- ggplot(data = midd.women, aes(x=total.sec))+
+  geom_histogram(binwidth = 10, aes(text = 
+                                      paste("Club: ", club,
+                                            "<br>", 
+                                            "Place: ", place,
+                                            "<br>", "Time: ",                                               time_official)))+
+  ggtitle("Event 51: Women's Collegiate 8+")+
+  geom_vline(xintercept = median(midd.women$total.sec), 
+             aes(text = paste("Median Boat")))+
+  geom_vline(xintercept = 1114.910, color = "blue")
+ggplotly(midd.women.hist)
+```
+
+The Women finished at the median, but retained their bid for the 52nd Charles. 
+
+```{r, echo = FALSE, warning=FALSE,fig.height=4}
+
+midd.women.split <- split.eval %>% 
+  filter(event_id == "51") %>% 
+  select(place, club, s1.total.sec, 
+         s2.total.sec, s3.total.sec, s4.total.sec) %>% 
+  gather(key = split, value = total.sec, s1.total.sec:s4.total.sec)
+
+midd.women.split <- midd.women.split %>% 
+  mutate(split = ifelse(split=="s1.total.sec", "1: Riverside",
+                        ifelse(split=="s2.total.sec", "2: Weld",
+                               ifelse(split=="s3.total.sec",
+                                      "3: Cambridge",
+             ifelse(split=="s4.total.sec","4: Finish",0)))))
+
+
+midd.women.split.wrap <- 
+  ggplot(data = midd.women.split, aes(x=total.sec, fill = place))+
+    geom_histogram(aes(text = paste(place,": ", club)))+
+    scale_fill_gradient()+
+    facet_wrap(~split, scales = "free")+
+    ggtitle("Event 51: Women's College 8+")
+ggplotly(midd.women.split.wrap)
+```
+
+
