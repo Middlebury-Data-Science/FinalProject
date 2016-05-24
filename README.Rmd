@@ -8,7 +8,6 @@ output:
 ![](data/rstud.png)
 
 
-
 ```{r, echo=FALSE, message=FALSE}
 options(warn = -1)
 suppressPackageStartupMessages(library(dplyr))
