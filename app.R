@@ -16,7 +16,7 @@ library(tidyr)
 #Import the dataset, this is from Children's Safe Product Act Reported Data
 #Download from: https://fortress.wa.gov/ecy/cspareporting/Reports/ReportViewer.aspx?ReportName=GetAllReport
 #Dates: June 1, 2012 as the start date and March 09, 2016 as the end date
-cspa <- read.csv("cspa.csv", header=TRUE)
+cspa <- read.csv("data/cspa.csv", header=TRUE)
 
 #Make some things more pallatable in terms of names 
 cspa <- rename(cspa, Chemical = `chemicalName`)
