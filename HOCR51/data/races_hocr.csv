@@ -1,0 +1,65 @@
+event_id,event,race_id,race_no,date,race_start,entries,distance
+1,Men's Senior Veteran Singles I And II [70+],Final,0,10/17/2015,8:00:00 AM,50,4800
+2,"Women's Veteran I/II And Senior Veteran I/II Singles [60 - 69, 70+]",Final,0,10/17/2015,8:20:00 AM,59,4800
+3,Men's Veteran Singles I And II [60+],Final,0,10/17/2015,8:55:00 AM,52,4800
+4,Men's Grand Master Singles [50+],Final,0,10/17/2015,9:20:00 AM,59,4800
+5,Women's Grand Master Singles [50+],Final,0,10/17/2015,9:42:00 AM,33,4800
+6,Men's Senior Master Eights [50+],Final,0,10/17/2015,10:05:00 AM,56,4800
+7,Women's Senior Master Eights [50+],Final,0,10/17/2015,10:26:00 AM,35,4800
+8,Men's Senior Master Fours [50+],Final,0,10/17/2015,10:44:00 AM,54,4800
+9,Women's Senior Master Fours [50+],Final,0,10/17/2015,11:05:00 AM,49,4800
+10,Men's Senior Master Doubles [50+],Final,0,10/17/2015,11:30:00 AM,34,4800
+11,Women's Senior Master Doubles [50+],Final,0,10/17/2015,11:45:00 AM,39,4800
+12,Men's Senior Master Singles [40+],Final,0,10/17/2015,12:03:00 PM,32,4800
+13,Women's Senior Masters Singles [40+],Final,0,10/17/2015,12:15:00 PM,30,4800
+14,Men's Alumni Eights,Final,0,10/17/2015,12:32:00 PM,57,4800
+15,Women's Alumni Eights,Final,0,10/17/2015,12:54:00 PM,48,4800
+16,Men's Club Fours,Final,0,10/17/2015,1:15:00 PM,54,4800
+17,Women's Club Fours,Final,0,10/17/2015,1:35:00 PM,64,4800
+18,Men's Club Eights,Final,0,10/17/2015,2:04:00 PM,41,4800
+19,Women's Club Eights,Final,0,10/17/2015,2:19:00 PM,38,4800
+20,Men's Master Fours [40+],Final,0,10/17/2015,2:36:00 PM,32,4800
+21,Women's Master Fours [40+],Final,0,10/17/2015,2:49:00 PM,28,4800
+22,Men's Master Eights [40+],Final,0,10/17/2015,3:08:00 PM,20,4800
+23,Women's Master Eights [40+],Final,0,10/17/2015,3:19:00 PM,23,4800
+24,Men's Championship Doubles,Final,0,10/17/2015,3:33:00 PM,16,4800
+25,Women's Championship Doubles,Final,0,10/17/2015,3:42:00 PM,18,4800
+26,Men's Collegiate Fours,Final,0,10/17/2015,3:54:00 PM,46,4800
+27,Women's Collegiate Fours,Final,0,10/17/2015,4:08:00 PM,35,4800
+28,Men's Championship Singles,Final,0,10/17/2015,4:24:00 PM,25,4800
+29,Women's Championship Singles,Final,0,10/17/2015,4:33:00 PM,21,4800
+DCPC2X,Directors' Challenge Parent/Child Doubles,Final,0,10/17/2015,4:43:00 PM,41,4800
+DCMX2X,Directors Challenge Mixed Doubles,Final,0,10/17/2015,5:03:00 PM,39,4800
+30,Mixed Legs/Trunk/arms Fours,Final,0,10/18/2015,8:00:00 AM,3,4800
+EXHB2X,Adaptive Inclusion Doubles [Exhibition],Final,0,10/18/2015,8:13:00 AM,6,4800
+31,Mixed/Same Gender Trunk/arms Doubles,Final,0,10/18/2015,8:21:00 AM,2,4800
+32A,Men's Club Singles,Final,0,10/18/2015,8:40:00 AM,40,4800
+32B,Men's Youth Singles,Final,0,10/18/2015,8:40:00 AM,35,4800
+33A,Womens Club Singles,Final,0,10/18/2015,9:04:00 AM,24,4800
+33B,Women's Youth Singles,Final,0,10/18/2015,9:04:00 AM,28,4800
+34,Men's Youth Fours,Final,0,10/18/2015,9:28:00 AM,85,4800
+DCW4X,Directors' Challenge Women's Quads,Final,0,10/18/2015,10:03:00 AM,35,4800
+35,Men's Youth Eights,Final,0,10/18/2015,10:29:00 AM,85,4800
+36,Men's Master Singles,Final,0,10/18/2015,10:56:00 AM,23,4800
+37,Women's Master Singles,Final,0,10/18/2015,11:05:00 AM,20,4800
+38,Men's Youth Doubles,Final,0,10/18/2015,11:21:00 AM,51,4800
+39,Women's Youth Doubles,Final,0,10/18/2015,11:37:00 AM,36,4800
+40,Men's Lightweight Singles,Final,0,10/18/2015,11:53:00 AM,18,4800
+41,Women's Lightweight Singles,Final,0,10/18/2015,12:02:00 PM,25,4800
+42,Women's Youth Fours,Final,0,10/18/2015,12:16:00 PM,85,4800
+DCM4X,Directors' Challenge Men's Quads,Final,0,10/18/2015,12:56:00 PM,40,4800
+43,Women's Youth Eights,Final,0,10/18/2015,1:12:00 PM,85,4800
+44,Men's Master Doubles [40+],Final,0,10/18/2015,1:45:00 PM,21,4800
+45,Women's Master Doubles [40+],Final,0,10/18/2015,1:55:00 PM,15,4800
+46,Men's Championship Fours,Final,0,10/18/2015,2:10:00 PM,15,4800
+47,Women's Championship Fours,Final,0,10/18/2015,2:16:00 PM,19,4800
+48,Men's Championship Eights,Final,0,10/18/2015,2:30:00 PM,27,4800
+49,Women's Championship Eights,Final,0,10/18/2015,2:44:00 PM,33,4800
+DCMX4X,Directors' Challenge Mixed Quads,Final,0,10/18/2015,2:59:00 PM,29,4800
+50,Men's Collegiate Eights,Final,0,10/18/2015,3:17:00 PM,41,4800
+51,Women's Collegiate Eights,Final,0,10/18/2015,3:31:00 PM,32,4800
+52,Men's Lightweight Fours,Final,0,10/18/2015,3:46:00 PM,15,4800
+53,Women's Lightweight Fours,Final,0,10/18/2015,3:53:00 PM,16,4800
+54,Men's Lightweight Eights,Final,0,10/18/2015,4:06:00 PM,17,4800
+55,Women's Lightweight Eights,Final,0,10/18/2015,4:12:00 PM,9,4800
+63,,,,,,2243,

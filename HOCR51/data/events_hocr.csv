@@ -1,0 +1,64 @@
+event_id,event,sort,boat,gender,entries
+1,Men's Senior Veteran Singles I And II [70+],1,Single,M,50
+2,"Women's Veteran I/II And Senior Veteran I/II Singles [60 - 69, 70+]",2,Single,W,59
+3,Men's Veteran Singles I And II [60+],3,Single,M,52
+4,Men's Grand Master Singles [50+],4,Single,M,59
+5,Women's Grand Master Singles [50+],5,Single,W,33
+6,Men's Senior Master Eights [50+],6,Eight,M,56
+7,Women's Senior Master Eights [50+],7,Eight,W,35
+8,Men's Senior Master Fours [50+],8,Four +,M,54
+9,Women's Senior Master Fours [50+],9,Four +,W,49
+10,Men's Senior Master Doubles [50+],10,Double,M,34
+11,Women's Senior Master Doubles [50+],11,Double,W,39
+12,Men's Senior Master Singles [40+],12,Single,M,32
+13,Women's Senior Masters Singles [40+],13,Single,W,30
+14,Men's Alumni Eights,14,Eight,M,57
+15,Women's Alumni Eights,15,Eight,W,48
+16,Men's Club Fours,16,Four +,M,54
+17,Women's Club Fours,17,Four +,W,64
+18,Men's Club Eights,18,Eight,M,41
+19,Women's Club Eights,19,Eight,W,38
+20,Men's Master Fours [40+],20,Four +,M,32
+21,Women's Master Fours [40+],21,Four +,W,28
+22,Men's Master Eights [40+],22,Eight,M,20
+23,Women's Master Eights [40+],23,Eight,W,23
+24,Men's Championship Doubles,24,Double,M,16
+25,Women's Championship Doubles,25,Double,W,18
+26,Men's Collegiate Fours,26,Four +,M,46
+27,Women's Collegiate Fours,27,Four +,W,35
+28,Men's Championship Singles,28,Single,M,25
+29,Women's Championship Singles,29,Single,W,21
+DCPC2X,Directors' Challenge Parent/Child Doubles,30,Double,MX,41
+DCMX2X,Directors Challenge Mixed Doubles,31,Double,MX,39
+30,Mixed Legs/Trunk/arms Fours,32,Four +,MX,3
+EXHB2X,Adaptive Inclusion Doubles [Exhibition],33,Double,MX,6
+31,Mixed/Same Gender Trunk/arms Doubles,34,Double,MX,2
+32A,Men's Club Singles,35,Single,M,40
+32B,Men's Youth Singles,36,Single,M,35
+33A,Womens Club Singles,37,Single,W,24
+33B,Women's Youth Singles,38,Single,W,28
+34,Men's Youth Fours,39,Four +,M,85
+DCW4X,Directors' Challenge Women's Quads,40,Quad -,W,35
+35,Men's Youth Eights,41,Eight,M,85
+36,Men's Master Singles,42,Single,M,23
+37,Women's Master Singles,43,Single,W,20
+38,Men's Youth Doubles,44,Double,M,51
+39,Women's Youth Doubles,45,Double,W,36
+40,Men's Lightweight Singles,46,Single,M,18
+41,Women's Lightweight Singles,47,Single,W,25
+42,Women's Youth Fours,48,Four +,W,85
+DCM4X,Directors' Challenge Men's Quads,49,Quad -,M,40
+43,Women's Youth Eights,50,Eight,W,85
+44,Men's Master Doubles [40+],51,Double,M,21
+45,Women's Master Doubles [40+],52,Double,W,15
+46,Men's Championship Fours,53,Four +,M,15
+47,Women's Championship Fours,54,Four +,W,19
+48,Men's Championship Eights,55,Eight,M,27
+49,Women's Championship Eights,56,Eight,W,33
+DCMX4X,Directors' Challenge Mixed Quads,57,Quad -,MX,29
+50,Men's Collegiate Eights,58,Eight,M,41
+51,Women's Collegiate Eights,59,Eight,W,32
+52,Men's Lightweight Fours,60,Four +,M,15
+53,Women's Lightweight Fours,61,Four +,W,16
+54,Men's Lightweight Eights,62,Eight,M,17
+55,Women's Lightweight Eights,63,Eight,W,9
