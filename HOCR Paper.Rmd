@@ -17,6 +17,7 @@ This paper seeks to understand the Head of the Charles primarily as it pertains 
 The Head of the Charles started in 1964 and today is the largest regatta in the world. The regatta draws almost 11,000 rowers from 25 countries. However, the United States dominates the delegation of rowers, with Canada and Great Britain in distant second and third, respectively. 
 
 ```{r, echo = FALSE, message=FALSE, error=FALSE, warning=FALSE}
+
 ## Packages
 library(plyr)
 library(dplyr)
