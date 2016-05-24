@@ -71,10 +71,10 @@ suppressPackageStartupMessages(library(lubridate))
 
 
 ```{r, echo=FALSE, message=FALSE, cache=TRUE}
-Worldbank2002 <- read.csv("data//Worldbank2002.csv",na.strings = c("..", "NA"),  header = TRUE)%>% tbl_df()
-Worldbank2006 <- read.csv("data//Worldbank2006.csv",na.strings = c("..", "NA"),  header = TRUE)%>% tbl_df()
-Worldbank2010 <- read.csv("data//Worldbank2010.csv",na.strings = c("..", "NA"),  header = TRUE)%>% tbl_df()
-Worldbank2014 <- read.csv("data//Worldbank2014.csv",na.strings = c("..", "NA"),  header = TRUE)%>% tbl_df()
+Worldbank2002 <- read.csv("Worldbank2002.csv",na.strings = c("..", "NA"),  header = TRUE)%>% tbl_df()
+Worldbank2006 <- read.csv("Worldbank2006.csv",na.strings = c("..", "NA"),  header = TRUE)%>% tbl_df()
+Worldbank2010 <- read.csv("Worldbank2010.csv",na.strings = c("..", "NA"),  header = TRUE)%>% tbl_df()
+Worldbank2014 <- read.csv("Worldbank2014.csv",na.strings = c("..", "NA"),  header = TRUE)%>% tbl_df()
 ```
 
 Intorduction
