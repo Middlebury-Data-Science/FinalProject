@@ -79,7 +79,7 @@ Worldbank2014 <- read.csv("data//Worldbank2014.csv",na.strings = c("..", "NA"), 
 
 Intorduction
 
-I did my data science project on health in sub-Saharan Africa. Health has been one of the biggest issues in sub-Saharan Africa with a lot of diseases plaguing the continent, examples being the HIV/AIDS epidemic in the 1990's and 2000's, and the recent ebola epidemic in 2014. Health issues have affected African countries especially It can be argued that poverty is the main cause for a lot of the health issues in sub-Saharan Africa, because a lot of African governments lack the necessary resources to and infrastructure develop the health sectors, diseases that should and could be easily controlled spread. Also due to the geography, a lot of African countries get diseases that other areas don’t get. The way the problem has been solved is through a lot of international aid.
+I did my data science project on health in sub-Saharan Africa. Health has been one of the biggest issues in sub-Saharan Africa with a lot of diseases plaguing the continent, examples being the HIV/AIDS epidemic in the 1990's and 2000's, and the recent ebola epidemic in 2014. Health issues have affected African countries especially It can be argued that poverty is the main cause for a lot of the health issues in sub-Saharan Africa, because a lot of African governments lack the necessary resources to and infrastructure develop the health sectors, diseases that should and could be easily controlled spread and affect millions of people. 
 
 My thesis is "What has been the effect of increased or decreased expenditures on Health Sectors in Developing countries"? Using mortality rates and increase of immunization as variables of interest to study. I chose mortality rate because it is a snapshot of how many people are dying in a country and thought it would be a good measure. Next I chose immunization rates because I felt this would be an adequate marker of how the potential spread of diseases is being controlled as more immunization leads to less exposure to curable diseases in the future
 
@@ -358,7 +358,7 @@ plot6+ geom_abline(intercept=A[1], slope=A[3], col="blue", size=1)+geom_smooth(m
 summary(model6)
 ```
 
-The year 2006 was an outlier, my regression shows that there was a positive correlation between expensiture on health as a percent of GDP and mortality rates, meaning that expenditures on health did lead to increases in mortalitiy rate.This can be explained by 
+The year 2006 was an outlier, my regression shows that there was a positive correlation between expensiture on health as a percent of GDP and mortality rates, meaning that expenditures on health did lead to increases in mortalitiy rate.There are no clear reasons why this is the case other than a high number of deaths that year. In 2010, the correlation goes back to negative.
 
 
 ```{r,echo=FALSE, message=FALSE , fig.width=12, fig.height=6 }
@@ -397,12 +397,14 @@ summary(model8)
 This regression shows that in 2014, there continued to be a negative correlation between expenditures on GDP and mortality rates, as the coefficient is -.7228. For every one percent of health expenditures as a percent of GDP there is a decrease of the mortality rate by .7228. However much like the previous regression models, the correlation is not strong with an adjusted r squared value of 0.006119, which is an extremely weak correlation.
 
 Limitations
+
 The biggest limitation with the analysis are the fit of the regression models. The r's and r-squared are very low signifying that the correlation may be very low as well. There are many reasons why correlations can't be established. One is variance of expenditures among countries. Expenditures as a percent of GDP can vary form country to country depending on necessity. A country that is going through an infectious disease crisis might need to spend a higher percent on GDP on health than a country with a relativly healthier population. In 2006 there was a positive correlation between increases in expenditures and mortality rates which was strange compared to the other measures. 
 What would have helped my analysis would have been looking at individual countries and studying them over time to further detect patterns between increases and decreases in mortality rates. This would have been particularly helpful for countries with the most increases or decreases in health expenditures as a percent of GDP.
 
 Conclusion
 
-Although it is weak, there is some correlation between countries that spend higher on health and an increase in immmunization and disease prevention,and a decrease in mortality rates.Over time, the effects of health expenditures as a percent of GDP on the parameters, especially immunization increased over time.As mentioned before this is due to better infrastrucutre developments that improve the access of healthcare to people and the spread of immunization and medicines to people.
+Although the regression fits are weak, there is are correlations between countries that spend higher on health and an increase in immmunization and disease prevention,and a decrease in mortality rates.Over time, the effects of health expenditures as a percent of GDP on the parameters, especially immunization increased over time.As mentioned before this is due to better infrastrucutre developments that improve the access of healthcare to people and the spread of immunization and medicines to people.
 
 Sources Cited
+World Bank Databases
 
