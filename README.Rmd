@@ -4,8 +4,10 @@ output:
     keep_md: yes
 ---
 ![](data/Logo.png)
-![](data/GitHub.png)
 ![](data/Rstudio.png)
+![](data/GitHub.png)   
+
+
 ```{r, echo=FALSE, message=FALSE}
 options(warn = -1)
 suppressPackageStartupMessages(library(dplyr))
@@ -32,8 +34,7 @@ suppressPackageStartupMessages(library(gtrendsR))
 ###**Christian M. Lehner, (BA)^1^ and Albert Y. Kim, PhD^2^**
 ^1^Expected BA in Economics, Middlebury College, Middlebury, VT   
 ^2^Assistant Professor of Statistics, Middlebury College, Middlebury, VT.
-(Instructed, and Reviewed)
---------------------------------------------------------------------------------------   
+(Instructed, and Reviewed) 
 
 ##**Abstract**
 Objectives --- This research is centered on the history of minimum wage, its relevance today, and future implications in the United States.  
