@@ -36,9 +36,14 @@ be outputted.
 
 # Project Details
 
-* Name: 
-* Project title:
-* Abstract:
+* Name: Paul Suberu
+
+* Project title: Health in sub-Saharan Africa
+
+* Abstract:I did my data science project on health in sub-Saharan Africa. Health has been one of the biggest issues in sub-Saharan Africa with a lot of diseases plaguing the continent, examples being the HIV/AIDS epidemic in the 1990's and 2000's, and the recent ebola epidemic in 2014. Health issues have affected African countries especially It can be argued that poverty is the main cause for a lot of the health issues in sub-Saharan Africa, because a lot of African governments lack the necessary resources to and infrastructure develop the health sectors, diseases that should and could be easily controlled spread. Also due to the geography, a lot of African countries get diseases that other areas don’t get. The way the problem has been solved is through a lot of international aid.
+
+My thesis is "What has been the effect of increased or decreased expenditures on Health Sectors in Developing countries"? Using mortality rates and increase of immunization as variables of interest to study. I chose mortality rate because it is a snapshot of how many people are dying in a country and thought it would be a good measure. Next I chose immunization rates because I felt this would be an adequate marker of how the potential spread of diseases is being controlled as more immunization leads to less exposure to curable diseases in the future
+
 
 ![](README_files/figure-html/unnamed-chunk-1-1.png)
 
