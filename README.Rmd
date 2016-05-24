@@ -5,7 +5,7 @@ output:
 ---
 ![](data/Logo.png)
 ![](data/GitHub.png)
-![](data/Rstudio.png)
+![](data/gtrendinterest.png)
 
 
 
