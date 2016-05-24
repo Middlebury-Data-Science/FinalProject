@@ -1,0 +1,431 @@
+---
+title: "Csm_final_proj"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+In this project I looked at data from a study on the microbiome of ticks in the Eastern United States. The paper by Van Treuen et al. (2015) collected two species of ticks, Ixodes scapularis and Ixodes affinis, from 5 states, Connecticut, New York, Virginia, North Carolina, and South Carolina. I. scapularis is the primary vector for Lyme disease, which is reported in over 30,000 patients per year in the United States (Centers for Disease Control and Prevention). Lyme disease is caused by the bacteria Borrelia burgdorferi, and a human becomes infected after a bite from an infected tick (Steere, 2001).
+
+In addition to B. burgdorferi, ticks can carry hundreds of other bacteria that make up their microbiome. Previous studies of the microbiomes of other animals, from humans down to insects, have shown that their microfauna can have great impacts on their health (Narasimhan and Fikrig, 2015; Turnbaugh et al., 2009). Importantly, in vectors of human disease, including ticks, certain members of the microbiome can prevent the disease agent from colonizing the host (Weiss and Aksoy, 2011). A famous example of this is an Enterobacter sp. in mosquitos that can prevent the mosquito from carrying the malaria-causing protozoan (Cirimotich et al., 2011).
+
+In this project, I will use data on the microbiomes of 92 ticks, first for an exploratory data analysis and subsequently to try to identify bacteria associated with a reduction in Borrelia prevalence. The microbiome data was originally in the form of DNA sequences of the bacterial 16S rRNA gene, a standard biomarker for identifying bacteria. This was used to identify Operational Taxonomic Units (OTUs), which are clusters of bacteria that share 97% sequence identity, in the program QIIME. The R analysis in this project starts from a table with OTUs as variables and ticks as observations.
+
+
+
+```{r pressure, echo=FALSE, message=FALSE, warning=FALSE, fig.width=12, fig.height=6}
+suppressPackageStartupMessages(library(ggplot2))
+suppressPackageStartupMessages(library(dplyr))
+suppressPackageStartupMessages(library(tidyr))
+suppressPackageStartupMessages(library(randomForest))
+suppressPackageStartupMessages(library(stringr))
+
+
+# This vector of colors is used for the stacked bar graphs.
+c25 <- c("#6A3D9A", # purple
+         "dodgerblue2","#E31A1C", # red
+         "green4",
+         "#FF7F00", # orange
+         "Grey","gold1",
+         "steelblue4","#FB9A99", # lt pink
+         "palegreen2",
+         "#CAB2D6", # lt purple
+         "maroon","#FDBF6F", # lt orange
+         "khaki2",
+         "orchid1","deeppink1","blue1",
+         "darkturquoise","green1","yellow4","yellow3","skyblue2",
+         "darkorange4","brown", "gray70")
+
+# These two other vectors are used for certain subseted stacked bar graphs
+# They have colors removed to ensure that color-coding is consistent
+c24 <- c25
+c24[24] = "gray70" ## for females
+cN <- c25[-13][-20] ## for negatives
+
+# Data are in long format; each row is a tick, each column an OTU
+ticks <- read.csv("data/ALL_Ticks.csv")
+ticks_long <- ticks #this gets used later
+ticks_long.orig <- ticks_long
+ticks <- ticks %>% gather(OTU, Count, 2:ncol(ticks))
+ticks.orig <- ticks
+# Turn count into percent
+stacks <- group_by(ticks, Tick, OTU) %>%  summarize(count = sum(Count))  %>% 
+  filter(count > 0) %>% 
+  inner_join(group_by(ticks, Tick) %>% summarize( Total = sum(Count))) %>% 
+  mutate(Percent = ((count/Total) * 100) )
+
+#taxonomy file has full taxonomic information of each OTU
+taxonomy <- read.csv("data/OTU_Taxonomy.txt", sep = "\t") %>% tbl_df() %>% 
+  mutate(Genus = gsub('[()0-9 ]', '', Genus)) %>% 
+  mutate(Family = gsub('[()0-9 ]', '', Family)) %>% 
+  mutate(Order = gsub('[()0-9 ]', '', Order))
+
+# get OTU in same format
+taxonomy <- mutate(taxonomy, OTU = gsub('[A-Z,a-z.]', '', OTU))
+stacks <- mutate(stacks, OTU = gsub('[A-Z,a-z.]', '', OTU))
+
+# the Taxon variable tells us the lowest identified taxonomical information
+stacks <- inner_join(stacks, taxonomy, by="OTU") %>% 
+  mutate(Taxon = ifelse(nchar(Genus) < 4, ifelse(nchar(Family) < 4, ifelse(nchar(Order) < 4, as.character(taxonomy), Order), Family), Genus)) %>% 
+  mutate(OTU_taxon = paste(OTU, Taxon, sep = "; "))
+
+# this is a totally janky section that is necessary because of some unidentified bug. Somewhere along the line the percents got messed up, this fizes them
+stacks <- group_by(stacks, Tick) %>% summarize(Tot = sum(count)) %>% 
+    inner_join(stacks, by = "Tick") %>% 
+    mutate(p2 = count/Tot) %>% 
+    mutate(Percent = p2 * 100)
+
+# for stacked bar chart, we want only the top 24 most common, everything else gets put into "other"
+most_common_df <- stacks %>% group_by(OTU_taxon) %>% 
+    summarize(Total = sum(Percent)) %>%  top_n(24)
+stacks_collapsed <- mutate(stacks, OTU_Collapsed = ifelse(OTU_taxon %in% most_common_df$OTU_taxon, OTU_taxon, "Other")) %>% 
+  group_by(Tick, OTU_Collapsed)  %>% summarize(Percent = sum(Percent))
+
+# the names tell what state they're from
+# this was initially necessary because the metadata wasn't availible
+# Now I could use the metadata file mf.txt, but this code works a well
+NC_affinis = c("BLA", "HAL", "JON", "WAS")
+NC_scapularis = c("FT", "Ixs")
+SC = c("DRGF", "DRGM", "DRHF")
+
+stacks_collapsed <- mutate(stacks_collapsed, region = gsub('[0-9.]+', '', Tick))
+
+stacks_collapsed <- mutate(stacks_collapsed, region = ifelse(region %in% NC_affinis, "NC_a", region)) %>% 
+  mutate(region = ifelse(region %in% NC_scapularis, "NC_s", region)) %>% 
+  mutate(region = ifelse(region == "RJB", "VA", region)) %>% 
+  mutate(region = ifelse(region %in% SC, "SC", region))
+
+stacks_collapsed$region = as.factor(stacks_collapsed$region)
+
+#Without further ado: stacked bar chart
+stacked_bar_chart <- ggplot(stacks_collapsed, aes(x = Tick, y = Percent, fill = OTU_Collapsed)) +
+    geom_bar(stat = "identity", color = "black") +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+    theme(legend.position="bottom", text=element_text(size=14), legend.key.size=unit(.25, "cm")) +
+    scale_fill_manual(values = c25) +
+      labs(fill = "OTU; Taxon") + 
+    guides(fill = guide_legend(ncol = 3)) +
+    theme(legend.background = element_rect(color = "Black", size = .5, linetype = "solid"))
+```
+
+```{r , echo=FALSE, message=FALSE, warning=FALSE, fig.width=12, fig.height=6}
+
+stacked_bar_chart
+
+```
+This stacked bar chart graphically represents the microbiome of each tick. The top 24 most common OTUs are shown and all others are grouped into the grey "other" category. Each virtical bar represents a single tick. OTUs are geven along with the lowest identified taxonomy (o = order, f = family, g = genus).
+
+The most noticale trend is that some ticks have extremely low diversity, being made up of almost entirely one OTU. The two taxa that dominate are in the genus Rickettsia, and the family Enterobacteriaceae.
+
+```{r , echo=FALSE, message=FALSE, warning=FALSE, fig.width=12, fig.height=4}
+
+metadata <- read.csv("data/mf.txt", sep = '\t') %>% 
+  rename(Tick = X.SampleID)
+sex <- metadata %>%  select(`Tick`, `Sex`)
+
+stacks_collapsed <- inner_join(stacks_collapsed, sex)
+
+# it just looks better when they're two separate graphs, not faceted
+f_collapsed = filter(stacks_collapsed, Sex == "F")
+m_collapsed = filter(stacks_collapsed, Sex == "M")
+
+stacked_bar_f <-ggplot(f_collapsed, aes(x = Tick, y = Percent, fill = OTU_Collapsed)) +
+  geom_bar(stat = "identity", color = "black") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  theme(legend.position="none" ,text=element_text(size=14)) +
+  scale_fill_manual(values = c24) + 
+  facet_grid(.~ region, scale="free", space="free") +
+  labs(x = "Female Ticks")
+
+stacked_bar_f
+```
+
+```{r , echo=FALSE, message=FALSE, warning=FALSE, fig.width=12, fig.height=6}
+stacked_bar_m <-ggplot(m_collapsed, aes(x = Tick, y = Percent, fill = OTU_Collapsed)) +
+  geom_bar(stat = "identity", color = "black") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  theme(legend.position="bottom", text=element_text(size=14), legend.key.size=unit(.25, "cm")) +
+  scale_fill_manual(values = c25) +
+  facet_grid(.~ region, scale="free", space="free") +
+  labs(x = "Male Ticks") +
+  labs(fill = "OTU; Taxon") + 
+    guides(fill = guide_legend(ncol = 3)) +
+    theme(legend.background = element_rect(color = "Black", size = .5, linetype = "solid"))
+stacked_bar_m
+
+```
+Some more differences become clear when we separate out male and female ticks, and facet by location collected. For example, we see that the females generally have a higher burden of Rickettsia (purple) than their male counterparts. It appears as though females are less diverse in general, which means that we might want to separate out males and females in future analysis. There are also pretty noticable differences between state/species; I. scapularis ticks collected in North Carolina are dominated by an OTU in the family Enterobacteriaceae that is rare in other states. Again, this suggests that we will need to separate appropriately by species and state for future analysis.
+
+
+```{r , echo=FALSE, message=FALSE, warning=FALSE, fig.width=10, fig.height=5}
+# we really should subsampe so all have same total count, but the data I got were already subsampled, so the totals are pretty close to equal for all
+ticks <- inner_join(ticks, sex, by="Tick")
+species_richness <- group_by(ticks, Tick, Sex) %>%  summarize(Num_species = sum(Count > 0))
+richness_histogram <- ggplot(data=species_richness, aes(x = Num_species)) +
+    geom_histogram(bins=10) +
+    facet_wrap(~Sex)
+richness_histogram
+means <- species_richness %>% group_by(Sex) %>%
+    summarize(mean = mean(Num_species))
+se <- species_richness %>% group_by(Sex) %>%
+    summarize(mean = sd(Num_species)/sqrt(n()))
+```
+A histgram of species richness (the number of OTU per tick) shows that the microbomes of male ticks are indeed more diverse than those of female ticks. Males had an average of 82 +/- 5.7 OTUs, females had 63 +/- 3.7 OTUs.
+
+```{r location pca, echo=FALSE, message=FALSE, warning=FALSE, fig.width=12, fig.height=6}
+# this part was done after I found the metadata file, so the region is done a bit differently than above
+OTUs <- ticks_long[,2:ncol(ticks_long)]
+just_ticks <- ticks_long[1]
+tick.pca <- prcomp(OTUs, center=TRUE, scale.=TRUE)
+#summary(tick.pca)
+ticks_meta <- left_join(just_ticks, metadata, by = "Tick") #this seems redundant, but it puts it in the same order as ticks.pca, which is important
+ticks_meta <- cbind(ticks_meta, tick.pca$x[1:nrow(ticks_meta), 1:2])
+
+pca_location <- ggplot(ticks_meta, aes(x = PC1, y = PC2, fill = species_and_state), color = "black") + 
+  geom_point(size = 4, pch = 21, alpha=0.5) + scale_fill_manual(values = c25) #+ geom_text(hjust = 0, nudge_x = 0.25)
+#pca_location
+
+```
+
+Another way we can compare microbiomes is with prinicpal compoenent analysis (PCA). This puts the microbiome on an x,y coordinate plane using axes that attempt to summarize as much of the varation as possible. The two best axes only were able to capture 16.7% of the variation in OTU abundance between ticks, meaning it only captures the biggest differences.
+
+We see below that the male ticks spread apart much further than the females. This shows that there is a much greater diversity between male ticks (known as beta diversity), in addition to greater diversity within each male (alpha diversity).
+
+Looking at the same PCA plot colored by species and state we see that I. scapularis ticks collected in Virginia show the greatest variation. In general ticks are fairly close to others collected in the same place. The most extreme case of this is I. scapularis from North Carolina, shown below as the red circles that are all on top of each other. These are probably so tightly clustered because they share the Enterobacteriaceae OTU (colored blue in the stacked bars) in high abundance.
+
+Because the females cluster so strongly in the PCA of all ticks, a second set of PCA axes were made from only the female ticks. The first two axes in this case accounted for 94% of the variation between ticks, meaning they group ticks about as well as is possible. Coloring this PCA plot by species and state we see a similar pattern as we saw in the males; scapularis from NC cluster closest, and Virginia shows the greatest variation.
+
+```{r , echo=FALSE, message=FALSE, warning=FALSE, fig.width=12, fig.height=6}
+#initiallly this was combined with the one above, using shape, but it was just too much informaiton
+pca_sex <- ggplot(ticks_meta, aes(x = PC1, y = PC2, fill = Sex), color = "black") + 
+  geom_point(size = 4, pch = 21, alpha=0.5)
+pca_sex
+
+```
+
+
+```{r , echo=FALSE, message=FALSE, warning=FALSE, fig.width=12, fig.height=6}
+pca_location
+
+```
+
+```{r , echo=FALSE, message=FALSE, warning=FALSE, fig.width=12, fig.height=6}
+#let's try to see the differences better by running the pca on just females, since they were the ones clumping
+
+female_ticks = ticks_meta %>%  filter(Sex == "F")
+female_long <- ticks_long %>%  filter(Tick %in% female_ticks$Tick)
+female_OTUs <- female_long[,2:ncol(female_long)]
+f.pca <- prcomp(female_OTUs, center=T, scalue.=T)
+#summary(f.pca)
+
+female_ticks <- cbind(female_ticks, f.pca$x[1:nrow(female_ticks), 1:2])
+
+
+f_pca_location <- ggplot(female_ticks, aes(x = PC1, y = PC2, fill = species_and_state), color = "black") + 
+  geom_point(size = 4, pch = 21, alpha=0.5) + scale_fill_manual(values = c25) #+ geom_text(hjust = 0, nudge_x = 0.25)
+f_pca_location
+
+```
+
+```{r , echo=FALSE, message=FALSE, warning=FALSE, fig.width=12, fig.height=6}
+sp_st <- ticks_meta %>%  select(Tick, species_and_state) 
+df_ticks.rf <- inner_join(sp_st, ticks_long, by = "Tick") %>% 
+  mutate(species_and_state = str_replace(species_and_state, "affinis", "a")) %>% 
+  mutate(species_and_state = str_replace(species_and_state, "scapularis", "s")) %>% 
+  mutate(species_and_state = as.factor(species_and_state))
+#typeof(df_ticks.rf$species_and_state)
+
+#at ntree 50,000 the fit seems fairly stable. Too far below this and it changes every time you run it.
+fit <- randomForest(species_and_state ~ ., data=df_ticks.rf[,2:ncol(df_ticks.rf)], ntree=5000)
+fit
+```
+
+``` {r, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 12, fig.height=4}
+# this Tick_borrelia_count.csv file is generated from the make_borrelia_file.R
+# it was cleaner to just keep it in the separate R file and include the .csv
+
+borrelia_counts <- read.csv("data/Tick_borrelia_count.csv") %>% 
+  rename(borrelia_ct = Count)
+borrelia_counts = borrelia_counts[-1]
+
+stacks_collapsed <- inner_join(stacks_collapsed, borrelia_counts) %>% 
+    mutate(borrelia = ifelse(borrelia_ct > 0, "positive", "negative"))
+
+#plot gets too wide, it's a lot easier to read when it's split up top and bottom than faceted left and right
+# I know you can facet top bottom, but it just didn't look as good, so this is sorta the custom way.
+# the color scales are coordinated to be the same, even though negatives are missing 2 OTUs
+p_collapsed <- filter(stacks_collapsed, borrelia == "positive")
+n_collapsed <- filter(stacks_collapsed, borrelia == "negative")
+
+stacked_bar_n <- ggplot(n_collapsed, aes(x = Tick, y = Percent, fill = OTU_Collapsed)) +
+  geom_bar(stat = "identity", color = "black") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+    theme(legend.position="none", text=element_text(size=14)) +
+    scale_fill_manual(values = cN) +
+    labs(x = "Negative Ticks") +
+    facet_grid(~region, space="free", scales= "free")
+stacked_bar_n
+```
+
+``` {r, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 12, fig.height=6}
+stacked_bar_p <- ggplot(p_collapsed, aes(x = Tick, y = Percent, fill = OTU_Collapsed)) +
+  geom_bar(stat = "identity", color = "black") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+    theme(legend.position="bottom", text=element_text(size=14), legend.key.size=unit(.25, "cm")) +
+    scale_fill_manual(values = c25) +
+      labs(fill = "OTU; Taxon", x = "Positive Ticks") + 
+    guides(fill = guide_legend(ncol = 3)) +
+    theme(legend.background = element_rect(color = "Black", size = .5, linetype = "solid")) +
+      facet_grid(~region, space="free", scales= "free")
+
+stacked_bar_p
+
+```
+
+
+``` {r, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 12, fig.height=6}
+#some things here are rdundat
+
+substrRight <- function(x, n){
+  substr(x, nchar(x)-n+1, nchar(x))
+}
+
+ticks_with_meta <- inner_join(stacks, metadata, by = "Tick") %>% 
+  select(`Tick`, `Percent`, `OTU_taxon`, `species_and_state`, `state`, `Sex`)
+
+#there's some punctuation in the names that randomForest doesn't like, but idk what it is so I get rid of all punctuation
+
+df_borrelia <- ticks_with_meta %>% 
+    mutate(OTU_taxon = gsub('[[:punct:] ]', '', paste("OTU", OTU_taxon, sep="")))  %>% 
+  filter(substrRight(OTU_taxon, 8) !="Borrelia") 
+
+df_borrelia <- inner_join(df_borrelia, borrelia_counts, by="Tick")
+df_b_long <- df_borrelia %>%  spread(OTU_taxon, Percent, fill = 0)
+
+male_ticks <- filter(df_b_long, Sex == "M")
+female_ticks <- filter(df_b_long, Sex == "F")
+
+male.rf <- randomForest(borrelia_ct ~ ., data=male_ticks[,5:ncol(male_ticks)], ntree = 500)
+male.rf
+varImpPlot(male.rf)
+
+female.rf <- randomForest(borrelia_ct ~ ., data=female_ticks[,5:ncol(female_ticks)], ntree = 500)
+female.rf
+#varImpPlot(female.rf)
+
+ticks_long_yn <- mutate(df_b_long, borrelia_ct = ifelse(borrelia_ct > 0, "positive", "negative")) %>% 
+    mutate(borrelia_ct = as.factor(borrelia_ct)) %>% 
+    rename(Borrelia = borrelia_ct)
+rf_data <- ticks_long_yn[,-1][,-2][,-2]
+
+male_ticks_yn <- filter(ticks_long_yn, Sex == "M")
+female_ticks_yn <- filter(ticks_long_yn, Sex == "F")
+
+male.rf_yn <- randomForest(Borrelia ~ ., data=male_ticks_yn[,5:ncol(male_ticks_yn)], ntree = 500)
+male.rf_yn
+varImpPlot(male.rf_yn)
+
+female.rf_yn <- randomForest(Borrelia ~ ., data=female_ticks_yn[,5:ncol(female_ticks_yn)], ntree = 500)
+female.rf_yn
+varImpPlot(female.rf_yn)
+
+rf_data_m <- male_ticks_yn[,-1][,-2][,-2] #this includes state_and_species
+
+# Does including state in the formula help?
+male.rf_yn <- randomForest(Borrelia ~ ., data=rf_data, ntree = 500)
+male.rf_yn
+varImpPlot(male.rf_yn)
+
+VA_males <- filter(male_ticks_yn, species_and_state == "scapularis_va")
+va.male.rf.yn <- randomForest(Borrelia ~ ., data=VA_males[,5:ncol(male_ticks_yn)], ntree = 500)
+va.male.rf.yn 
+varImpPlot(male.rf_yn)
+
+```
+
+``` {r, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 12, fig.height=6}
+otus_present <- inner_join(ticks_with_meta, borrelia_counts, by="Tick")
+otus_present <- otus_present %>% 
+  mutate(borrelia_ct = ifelse(borrelia_ct>0, "positive", "negative")) %>% 
+  rename(Borrelia = borrelia_ct) %>% 
+  filter(substrRight(OTU_taxon, 8) !="Borrelia") %>% 
+  spread(OTU_taxon, Percent, fill = 0) #spread and gather re-intorudces 0s
+
+#splitting it up made it work, idk why.
+otus_present <- gather(otus_present, OTU_taxon, Percent, 6:ncol(otus_present)) %>% 
+  mutate(present = ifelse(Percent > 0, 1, 0))
+
+
+f_ticks <- otus_present %>%  filter(Sex == "F")
+m_ticks <- otus_present %>%  filter(Sex == "M")
+
+f_ticks <- f_ticks %>% group_by(Borrelia, OTU_taxon) %>%
+    summarize(frequency = mean(present))
+
+f_ticks <- spread(f_ticks, Borrelia, frequency) %>% 
+  mutate(diff = positive - negative)
+
+ggplot(f_ticks %>%  top_n(20, abs(diff)), aes(x = reorder(OTU_taxon, diff), y = diff, fill = as.factor(ifelse(diff > 0, "Positive", "Negative")))) +
+  geom_bar(stat = "identity") +
+  coord_flip() + guides(fill=FALSE) +
+  labs(y = "Difference in Frequency (females)", x = "OTU; Taxonomy") +
+  theme(text = element_text(size=14))
+
+m_ticks <- m_ticks %>% group_by(Borrelia, OTU_taxon) %>%
+  summarize(frequency = mean(present))
+
+m_ticks <- spread(m_ticks, Borrelia, frequency) %>% 
+  mutate(diff = positive - negative)
+
+ggplot(m_ticks %>%  top_n(20, abs(diff)), aes(x = reorder(OTU_taxon, diff), y = diff, fill = as.factor(ifelse(diff > 0, "Positive", "Negative")))) +
+  geom_bar(stat = "identity") +
+  coord_flip() + guides(fill=FALSE) +
+  labs(y = "Difference in Frequency (males)", x = "OTU; Taxonomy")+
+theme(text = element_text(size=14))
+
+VA_males_diff <- otus_present %>%  filter(Sex == "M") %>% 
+  filter(species_and_state == "scapularis_va") %>% 
+  group_by(Borrelia, OTU_taxon) %>%
+  summarize(frequency = mean(present)) %>% 
+  spread( Borrelia, frequency) %>% 
+  mutate(diff = positive - negative)
+
+ggplot(VA_males_diff %>%  top_n(20, abs(diff)), aes(x = reorder(OTU_taxon, diff), y = diff, fill = as.factor(ifelse(diff > 0, "Positive", "Negative")))) +
+  geom_bar(stat = "identity") +
+  coord_flip() + guides(fill=FALSE) +
+  labs(y = "Difference in Frequency (VA males)", x = "OTU; Taxonomy") +
+theme(text = element_text(size=14))
+
+VA_males_chi <- otus_present %>% filter(Sex == "M") %>% 
+  filter(species_and_state == "scapularis_va")
+
+num_VAm <- VA_males_chi %>% group_by(Borrelia, Tick) %>% summarize(junk = n()) %>% 
+    group_by(Borrelia) %>% summarize(num = n())
+pos = as.numeric(num_VAm[2,2])
+neg = as.numeric(num_VAm[1,2])
+
+VA_males_chi <- VA_males_chi %>% 
+  group_by(Borrelia, OTU_taxon) %>%
+  summarize(frequency = mean(present)) %>% 
+  spread( Borrelia, frequency) %>% 
+  mutate(negative = negative * neg) %>% 
+  mutate(positive = positive * pos)
+
+#from the graph we get the most differentially present
+most_sig <- VA_males_chi %>%  filter(OTU_taxon == "4480861; g__Catenibacterium") 
+#most_sig
+#way cleaner to just bind these manually
+chi_df <- rbind (c(3, 0), c(neg-3, pos-0))
+chisq.test(chi_df)
+
+```
+
+
+
+
+
+
+
