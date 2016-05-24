@@ -280,7 +280,7 @@ genes that are overexpressed in GMS584.
 #--------Linking GENE ONTOLOGY
 
 #Downloaded from Gene Ontology Consortium
-obo <- readLines("go.obo.txt")
+obo <- readLines("data/go.obo.txt")
 
 id_lines <- which(str_detect(obo, "id: GO:") & !str_detect(obo, "alt_id: GO:"))
 name_lines <- id_lines + 1
