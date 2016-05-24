@@ -1,44 +1,15 @@
 
-# Final Project Code and Data
-
-* Due Tuesday 2016/5/24 (last day of exam period) at 9am.
-* You must fork this repository as described in the [HW Submission 
-Exercise](https://github.com/Middlebury-Data-Science/HW-0#hw-submission-exercise).
-* Ensure all data files and CSV files are in the folder `data`. So for example, 
-say you want to load the the file `example.csv` in the `data` folder.  You need 
-to run `read.csv("data/example.csv", header=TRUE)` and not 
-`read.csv("example.csv", header=TRUE)`.
-* Fill in the project details below.
-* Delete everything in this file before the section "Project Details".
-* Push/commit **all files** necessary for me to reproduce your final report.
-
-
-#### Repository README Cover Page
-
-Any good repository on GitHub will have an informative cover page. It is an
-advertisement of your work and should give basic instructions on how to use
-it/replicate your work. The contents of the file `README.md` end up being what's
-on the repository cover page. For example:
-
-* The [repo page for `dplyr`](https://github.com/hadley/dplyr).
-* The contents of its [`README.md` file](https://github.com/hadley/dplyr/blob/master/README.md) (click on RAW).
-
-The way you will create your `README.md` is via `README.Rmd`:
-
-* **DO NOT EDIT** `README.md`
-* Rather, edit `README.Rmd` and then Knit it. An updated `README.md` file will
-be outputted.
-* When you push/commit `README.md`, it will show up as your repo's cover page.
-
-
-
-
-
 # Project Details
 
-* Name: 
-* Project title:
+* Name: Phil Hoxie 
+* Project title: How to Row the Head of the Charles
 * Abstract:
 
-![](README_files/figure-html/unnamed-chunk-1-1.png)
+This paper seeks to understand the Head of the Charles primarily as it pertains to collegiate rowing. This paper evaluates the relative competitiveness of each event at the Head of the Charles and takes a detailed look at how the 4s and 8s rowed the course and how the course itself effected the outcome of the race. Overall, it appears that boats that started fastest out of the gate did better even though they dropped in the distribution later in the race.
+
+![](http://i1.wp.com/middleburycrew.org/wp-content/uploads/2013/03/MV8small.png?fit=836%2C836)
+
+
+<!--html_preserve--><div id="htmlwidget-8399" style="width:672px;height:480px;" class="plotly"></div>
+<script type="application/json" data-for="htmlwidget-8399">{"x":{"data":[{"type":"choropleth","inherit":false,"z":[2136,1221,679,844,541,373,284,219,333,183,235,240,337,157,187,102,165,109,50,59,89,84,67,97,53,86,27,38,31,30,10,15,9,38,14,9],"text":["clubs:  116 <br> athletes:  2136","clubs:  77 <br> athletes:  1221","clubs:  56 <br> athletes:  679","clubs:  49 <br> athletes:  844","clubs:  43 <br> athletes:  541","clubs:  30 <br> athletes:  373","clubs:  28 <br> athletes:  284","clubs:  20 <br> athletes:  219","clubs:  20 <br> athletes:  333","clubs:  17 <br> athletes:  183","clubs:  16 <br> athletes:  235","clubs:  16 <br> athletes:  240","clubs:  15 <br> athletes:  337","clubs:  14 <br> athletes:  157","clubs:  12 <br> athletes:  187","clubs:  11 <br> athletes:  102","clubs:  11 <br> athletes:  165","clubs:  10 <br> athletes:  109","clubs:  9 <br> athletes:  50","clubs:  9 <br> athletes:  59","clubs:  7 <br> athletes:  89","clubs:  7 <br> athletes:  84","clubs:  7 <br> athletes:  67","clubs:  6 <br> athletes:  97","clubs:  6 <br> athletes:  53","clubs:  6 <br> athletes:  86","clubs:  4 <br> athletes:  27","clubs:  4 <br> athletes:  38","clubs:  4 <br> athletes:  31","clubs:  3 <br> athletes:  30","clubs:  3 <br> athletes:  10","clubs:  3 <br> athletes:  15","clubs:  3 <br> athletes:  9","clubs:  3 <br> athletes:  38","clubs:  1 <br> athletes:  14","clubs:  1 <br> athletes:  9"],"locations":["MA","NY","PA","CT","CA","NJ","FL","VA","WA","OH","MI","NH","DC","ME","MD","IL","RI","MN","NC","TN","DE","TX","VT","GA","OR","WI","CO","IN","OK","AL","AZ","KS","MO","SC","IA","ND"],"locationmode":"USA-states","marker":{"line":{"color":"rgb(0,0,0)","width":1}},"colorbar":{"title":"Number of Rowers"},"colorbar.1":{"title":"athletes"},"colorscale":[[0,"#FCFBFD"],[0.111111111111111,"#F0EFF6"],[0.222222222222222,"#DFDEED"],[0.333333333333333,"#C6C7E1"],[0.444444444444444,"#ABA9D1"],[0.555555555555556,"#918DC2"],[0.666666666666667,"#796EB2"],[0.777777777777778,"#65489F"],[0.888888888888889,"#52248D"],[1,"#3F007D"]]}],"layout":{"title":"2015 HOCR Participation by State<br>(Hover for breakdown)","geo":{"scope":"usa","projection":{"type":"albers usa"},"showlakes":true,"lakecolor":"rgb(255,255,255)"},"zaxis":{"title":"athletes"},"margin":{"b":40,"l":60,"t":25,"r":10}},"url":null,"width":null,"height":null,"source":"A","config":{"modeBarButtonsToRemove":["sendDataToCloud"]},"base_url":"https://plot.ly"},"evals":[]}</script><!--/html_preserve-->
 
