@@ -5,8 +5,8 @@ output:
 ---
 ![](data/Logo.png)
 ![](data/GitHub.png)
-![](data/GitHub.png)
-Test
+![](data/Rstudio.png)
+
 
 
 ```{r, echo=FALSE, message=FALSE}
