@@ -114,7 +114,10 @@ stacked_bar_chart <- ggplot(stacks_collapsed, aes(x = Tick, y = Percent, fill = 
       labs(fill = "OTU; Taxon") + 
     guides(fill = guide_legend(ncol = 3)) +
     theme(legend.background = element_rect(color = "Black", size = .5, linetype = "solid"))
+```
 
+
+```{r , echo=FALSE, message=FALSE, warning=FALSE, fig.width=12, fig.height=4}
 
 metadata <- read.csv("data/mf.txt", sep = '\t') %>% 
   rename(Tick = X.SampleID)
@@ -135,7 +138,9 @@ stacked_bar_f <-ggplot(f_collapsed, aes(x = Tick, y = Percent, fill = OTU_Collap
   labs(x = "Female Ticks")
 
 stacked_bar_f
+```
 
+```{r , echo=FALSE, message=FALSE, warning=FALSE, fig.width=12, fig.height=6}
 stacked_bar_m <-ggplot(m_collapsed, aes(x = Tick, y = Percent, fill = OTU_Collapsed)) +
   geom_bar(stat = "identity", color = "black") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
