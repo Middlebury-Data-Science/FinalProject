@@ -1,0 +1,410 @@
+---
+output:
+  pdf_document: default
+  html_document:
+    keep_md: yes
+  word_document: default
+---
+
+# Final Project Code and Data
+
+* Due Tuesday 2016/5/24 (last day of exam period) at 9am.
+* You must fork this repository as described in the [HW Submission 
+Exercise](https://github.com/Middlebury-Data-Science/HW-0#hw-submission-exercise).
+* Ensure all data files and CSV files are in the folder `data`. So for example, 
+say you want to load the the file `example.csv` in the `data` folder.  You need 
+to run `read.csv("data/example.csv", header=TRUE)` and not 
+`read.csv("example.csv", header=TRUE)`.
+* Fill in the project details below.
+* Delete everything in this file before the section "Project Details".
+* Push/commit **all files** necessary for me to reproduce your final report.
+
+
+#### Repository README Cover Page
+
+Any good repository on GitHub will have an informative cover page. It is an
+advertisement of your work and should give basic instructions on how to use
+it/replicate your work. The contents of the file `README.md` end up being what's
+on the repository cover page. For example:
+
+* The [repo page for `dplyr`](https://github.com/hadley/dplyr).
+* The contents of its [`README.md` file](https://github.com/hadley/dplyr/blob/master/README.md) (click on RAW).
+
+The way you will create your `README.md` is via `README.Rmd`:
+
+* **DO NOT EDIT** `README.md`
+* Rather, edit `README.Rmd` and then Knit it. An updated `README.md` file will
+be outputted.
+* When you push/commit `README.md`, it will show up as your repo's cover page.
+
+
+
+
+
+# Project Details
+
+* Name: Paul Suberu
+* Project title: Health in sub-Saharan Africa
+* Abstract: The goal of my project was to see what the effect of spending on health had on certain health measurements in sub-Saharan African countries.
+
+```{r, echo=FALSE, message=FALSE }
+library(dplyr)
+library(ggplot2)
+library(rgdal)
+library(maptools)
+library(Quandl)
+library(lubridate)
+library(stringr)
+library(tm)
+library(wordcloud)
+library(SnowballC)
+library(ggmap)
+library(mapproj)
+library(reshape)
+library(leaflet)
+library(WDI)
+library(magrittr)
+suppressPackageStartupMessages(library(ggplot2))
+suppressPackageStartupMessages(library(dplyr))
+suppressPackageStartupMessages(library(lubridate))
+```
+
+
+```{r, echo=FALSE, message=FALSE, cache=TRUE}
+Worldbank2002 <- read.csv("Worldbank2002.csv",na.strings = c("..", "NA"),  header = TRUE)%>% tbl_df()
+Worldbank2006 <- read.csv("Worldbank2006.csv",na.strings = c("..", "NA"),  header = TRUE)%>% tbl_df()
+Worldbank2010 <- read.csv("Worldbank2010.csv",na.strings = c("..", "NA"),  header = TRUE)%>% tbl_df()
+Worldbank2014 <- read.csv("Worldbank2014.csv",na.strings = c("..", "NA"),  header = TRUE)%>% tbl_df()
+```
+
+Intorduction
+
+I did my data science project on health in sub-Saharan Africa. Health has been one of the biggest issues in sub-Saharan Africa with a lot of diseases plaguing the continent, examples being the HIV/AIDS epidemic in the 1990's and 2000's, and the recent ebola epidemic in 2014. Health issues have affected African countries especially It can be argued that poverty is the main cause for a lot of the health issues in sub-Saharan Africa, because a lot of African governments lack the necessary resources to and infrastructure develop the health sectors, diseases that should and could be easily controlled spread and affect millions of people. 
+
+My thesis is "What has been the effect of increased or decreased expenditures on Health Sectors in Developing countries"? Using mortality rates and increase of immunization as variables of interest to study. I chose mortality rate because it is a snapshot of how many people are dying in a country and thought it would be a good measure. Next I chose immunization rates because I felt this would be an adequate marker of how the potential spread of diseases is being controlled as more immunization leads to less exposure to curable diseases in the future
+
+I primarily used the World Bank databases for my data source. The primary variables were about 55 sub-Saharan countries, and I looked at the years 2002 to 2014. I looked at the data through snapshots in time looking at years 2002, 2006, 2010 and 2014.  
+
+
+```{r, echo=FALSE,  message=FALSE,  fig.width=12, fig.height=6}
+Worldbank2002A <- Worldbank2002 %>% 
+filter(!is.na(TRUE)) %>%
+select(
+Country.Name, 
+Country.Code,
+Health.expenditure..total....of.GDP...SH.XPD.TOTL.ZS., 
+Out.of.pocket.health.expenditure....of.total.expenditure.on.health...SH.XPD.OOPC.TO.ZS.,
+Out.of.pocket.health.expenditure....of.private.expenditure.on.health...SH.XPD.OOPC.ZS.,
+Mortality.rate..neonatal..per.1.000.live.births...SH.DYN.NMRT.,
+Mortality.rate..neonatal..per.1.000.live.births...SH.DYN.NMRT.,
+Life.expectancy.at.birth..total..years...SP.DYN.LE00.IN.,
+Number.of.infant.deaths..SH.DTH.IMRT.,
+Immunization..DPT....of.children.ages.12.23.months...SH.IMM.IDPT.,
+Tuberculosis.treatment.success.rate....of.new.cases...SH.TBS.CURE.ZS.,
+Tuberculosis.case.detection.rate.....all.forms...SH.TBS.DTEC.ZS.,
+Vitamin.A.supplementation.coverage.rate....of.children.ages.6.59.months...SN.ITK.VITA.ZS.,
+Prevalence.of.HIV..total....of.population.ages.15.49...SH.DYN.AIDS.ZS.,
+Physicians..per.1.000.people...SH.MED.PHYS.ZS.,
+Community.health.workers..per.1.000.people...SH.MED.CMHW.P3.,
+Nurses.and.midwives..per.1.000.people...SH.MED.NUMW.P3.
+)
+
+Worldbank2006A <- Worldbank2006 %>%
+filter(!is.na(TRUE)) %>%
+select(
+Country.Name,
+Country.Code,
+Health.expenditure..total....of.GDP...SH.XPD.TOTL.ZS., 
+Out.of.pocket.health.expenditure....of.total.expenditure.on.health...SH.XPD.OOPC.TO.ZS.,
+Out.of.pocket.health.expenditure....of.private.expenditure.on.health...SH.XPD.OOPC.ZS.,
+Mortality.rate..neonatal..per.1.000.live.births...SH.DYN.NMRT.,
+Mortality.rate..neonatal..per.1.000.live.births...SH.DYN.NMRT.,
+Life.expectancy.at.birth..total..years...SP.DYN.LE00.IN.,
+Number.of.infant.deaths..SH.DTH.IMRT.,
+Immunization..DPT....of.children.ages.12.23.months...SH.IMM.IDPT.,
+Tuberculosis.treatment.success.rate....of.new.cases...SH.TBS.CURE.ZS.,
+Tuberculosis.case.detection.rate.....all.forms...SH.TBS.DTEC.ZS.,
+Vitamin.A.supplementation.coverage.rate....of.children.ages.6.59.months...SN.ITK.VITA.ZS.,
+Prevalence.of.HIV..total....of.population.ages.15.49...SH.DYN.AIDS.ZS.,
+Physicians..per.1.000.people...SH.MED.PHYS.ZS.,
+Community.health.workers..per.1.000.people...SH.MED.CMHW.P3.,
+Nurses.and.midwives..per.1.000.people...SH.MED.NUMW.P3.
+)
+
+Worldbank2010A <- Worldbank2010 %>%
+filter(!is.na(TRUE)) %>%
+select(
+Country.Name, 
+Country.Code,
+Health.expenditure..total....of.GDP...SH.XPD.TOTL.ZS., 
+Out.of.pocket.health.expenditure....of.total.expenditure.on.health...SH.XPD.OOPC.TO.ZS.,
+Out.of.pocket.health.expenditure....of.private.expenditure.on.health...SH.XPD.OOPC.ZS.,
+Mortality.rate..neonatal..per.1.000.live.births...SH.DYN.NMRT.,
+Mortality.rate..neonatal..per.1.000.live.births...SH.DYN.NMRT.,
+Life.expectancy.at.birth..total..years...SP.DYN.LE00.IN.,
+Number.of.infant.deaths..SH.DTH.IMRT.,
+Immunization..DPT....of.children.ages.12.23.months...SH.IMM.IDPT.,
+Tuberculosis.treatment.success.rate....of.new.cases...SH.TBS.CURE.ZS.,
+Tuberculosis.case.detection.rate.....all.forms...SH.TBS.DTEC.ZS.,
+Vitamin.A.supplementation.coverage.rate....of.children.ages.6.59.months...SN.ITK.VITA.ZS.,
+Prevalence.of.HIV..total....of.population.ages.15.49...SH.DYN.AIDS.ZS.,
+Physicians..per.1.000.people...SH.MED.PHYS.ZS.,
+Community.health.workers..per.1.000.people...SH.MED.CMHW.P3.,
+Nurses.and.midwives..per.1.000.people...SH.MED.NUMW.P3.
+)
+
+Worldbank2014A <- Worldbank2014 %>%
+filter(!is.na(TRUE)) %>%
+select(
+Country.Name, 
+Country.Code,
+Health.expenditure..total....of.GDP...SH.XPD.TOTL.ZS., 
+Out.of.pocket.health.expenditure....of.total.expenditure.on.health...SH.XPD.OOPC.TO.ZS.,
+Out.of.pocket.health.expenditure....of.private.expenditure.on.health...SH.XPD.OOPC.ZS.,
+Mortality.rate..neonatal..per.1.000.live.births...SH.DYN.NMRT.,
+Mortality.rate..neonatal..per.1.000.live.births...SH.DYN.NMRT.,
+Life.expectancy.at.birth..total..years...SP.DYN.LE00.IN.,
+Number.of.infant.deaths..SH.DTH.IMRT.,
+Immunization..DPT....of.children.ages.12.23.months...SH.IMM.IDPT.,
+Tuberculosis.treatment.success.rate....of.new.cases...SH.TBS.CURE.ZS.,
+Tuberculosis.case.detection.rate.....all.forms...SH.TBS.DTEC.ZS.,
+Vitamin.A.supplementation.coverage.rate....of.children.ages.6.59.months...SN.ITK.VITA.ZS.,
+Prevalence.of.HIV..total....of.population.ages.15.49...SH.DYN.AIDS.ZS.,
+Physicians..per.1.000.people...SH.MED.PHYS.ZS.,
+Community.health.workers..per.1.000.people...SH.MED.CMHW.P3.,
+Nurses.and.midwives..per.1.000.people...SH.MED.NUMW.P3.
+)
+```
+
+
+Expenditure Graphs
+
+```{r, echo=FALSE, message=FALSE,    fig.width=12, fig.height=6}
+#Plot Expenditure on Health by Country in 2002
+ggplot(data=Worldbank2002A, aes(x = Country.Name,
+y = Health.expenditure..total....of.GDP...SH.XPD.TOTL.ZS. )) + geom_point()+
+labs(title = "Health Expenditure 2002",
+x = "Country Name", y = "Expenditure as a percent of GDP")+ theme(axis.text.x = element_text(angle = 90, hjust = 1)) 
+
+#Plot Expenditure on Health by Country in 2006
+ggplot(data=Worldbank2006A, aes(x = Country.Name,
+y = Health.expenditure..total....of.GDP...SH.XPD.TOTL.ZS. ))+ geom_point()+ labs(title = "Health Expenditure 2006",
+x = "Country Name", y = "Expenditure as a percent of GDP") + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+#Plot Expenditure on Health by Country in 2010
+ggplot(data=Worldbank2010A, aes(x = Country.Name,
+y = Health.expenditure..total....of.GDP...SH.XPD.TOTL.ZS. ))+ geom_point()+
+labs(title = "Health Expenditure 2010",
+x = "Country Name", y = "Expenditure as a percent of GDP")+ theme(axis.text.x = element_text(angle = 90, hjust = 1)) 
+
+#Plot Expenditure on Health by Country in 2014
+ggplot(data=Worldbank2014A, aes(x = Country.Name,
+y = Health.expenditure..total....of.GDP...SH.XPD.TOTL.ZS. ))+ geom_point()+
+labs(title = "Health Expenditure 2014",
+x = "Country Name", y = "Expenditure as a percent of GDP") + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+```
+
+The first four graphs showe expenditures on health as a percent of GDP per capita for each country, in the year 2002, 2006, 2010 and 2014. I chose expenditue as a percent of GDP per capita because I wanted to decrease as much variance as I could between expenditures on health between countries. If I had chosen variables such as total GDP or total health numbers as bigger counries would have bigger expenditures which would skew the results I was looking for.
+
+Immunization Rates Per Country
+```{r, echo=FALSE,  message=FALSE  ,  fig.width=12, fig.height=6 }
+#Immunization rates per country
+ggplot(data=Worldbank2002A, aes(x = Country.Name,
+y = Immunization..DPT....of.children.ages.12.23.months...SH.IMM.IDPT. ))+ geom_point() +
+labs(title = "Immunization Rate in 2002", x = "Country Name", y = "Immunization Of Children Per 1000 Children") + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+
+ggplot(data=Worldbank2006A, aes(x = Country.Name,
+y = Immunization..DPT....of.children.ages.12.23.months...SH.IMM.IDPT. ))+ geom_point()+
+labs(title = "Immunization Rate in 2006", x = "Country Name", y = "Immunization Of Children Per 1000 Children") + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+
+ggplot(data=Worldbank2010A, aes(x = Country.Name,
+y = Immunization..DPT....of.children.ages.12.23.months...SH.IMM.IDPT. ))+ geom_point()+
+labs(title = "Immunization Rate in 2010", x = "Country Name", y = "Immunization Of Children Per 1000 Children") + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+
+ggplot(data=Worldbank2014A, aes(x = Country.Name,
+y = Immunization..DPT....of.children.ages.12.23.months...SH.IMM.IDPT. ))+ geom_point()+
+labs(title = "Immunization Rate in 2014", x = "Country Name", y = "Immunization Of Children Per 1000 Children") + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+```
+
+The next four graphs show immunization rates for each country for the years 2002, 2006, 2010 and 2014.
+
+
+```{r, echo=FALSE,   message=FALSE ,  fig.width=12, fig.height=6 }
+#Effect Of Expenditure on Immunization 2002
+
+model1 <- lm(Immunization..DPT....of.children.ages.12.23.months...SH.IMM.IDPT. ~ Health.expenditure..total....of.GDP...SH.XPD.TOTL.ZS., data=Worldbank2002A)
+model1
+resid(model1)
+A<- coefficients(model1)
+plot1<- ggplot(data=Worldbank2002A,aes(x=Health.expenditure..total....of.GDP...SH.XPD.TOTL.ZS.,
+y=Immunization..DPT....of.children.ages.12.23.months...SH.IMM.IDPT.,
+xlab=("Health Expenditure"), ylab=("Immunization Rate")))+geom_point(stat="identity")+geom_jitter(height = 0.2)+labs(title = "Regression of effects of Expenditure on Immunization in 2002",x = "Health Expenditure as Percent of GDP", y = "Immunization per 1000 people")
+plot1+ geom_abline(intercept=A[1], slope=A[2], col="blue", size=1)+geom_smooth(method="lm", size=1, level=0.95)
+summary(model1)
+
+```
+
+In the first regression that I ran, we can see that there is a positive effect on effects of health expenditure as a percent of GDP and immunization in 2002. Overall for countries that had higher expenditure percentage rates also had higher immunization rates. This is further shown in the regression model with a coefficient of .9279, and it is statistically significant. This means that for a one percent increase in expenditures as a percent of GDP, there is a .9279 percent increase of the population that is immunized, decreasing their chances of getting infectious diseases in the future.
+
+
+```{r, echo=FALSE , message=FALSE ,   fig.width=12, fig.height=6}
+#Regression Effect of Expenditure on Immunization 2006
+model2 <- lm(Immunization..DPT....of.children.ages.12.23.months...SH.IMM.IDPT. ~ Health.expenditure..total....of.GDP...SH.XPD.TOTL.ZS., data=Worldbank2006A)
+model2
+resid(model2)
+A<- coefficients(model2)
+plot2<- ggplot(data=Worldbank2006A,aes(x=Health.expenditure..total....of.GDP...SH.XPD.TOTL.ZS.,
+y=Immunization..DPT....of.children.ages.12.23.months...SH.IMM.IDPT.,
+xlab=("Health Expenditure"), ylab=("Immunization Rate")))+geom_point(stat="identity")+geom_jitter(height = 0.2)+labs(title = "Regression of Effects of expenditure on Immunization in 2006",x = "Health Expenditure as Percent of GDP", y = "Immunization per 1000 people")
+plot2+ geom_abline(intercept=A[1], slope=A[2], col="blue", size=1)+geom_smooth(method="lm", size=1, level=0.95)
+summary(model2)
+```
+
+This second model looking at 2006 statisitics shows a stronger correlation. In this regression, the coeffecient is 1.630 meaning that a one percent increase in health expenditures as a percent of GDP shows that there is 1.630 percent increase in those that were immunized, and is also statistically significant.
+
+```{r,echo=FALSE , message=FALSE ,   fig.width=12, fig.height=6 }
+#Regression Effect of Expenditure on Immunization 2010
+model3 <- lm(Immunization..DPT....of.children.ages.12.23.months...SH.IMM.IDPT. ~ Health.expenditure..total....of.GDP...SH.XPD.TOTL.ZS., data=Worldbank2010A)
+model3
+resid(model3)
+A<- coefficients(model3)
+plot3<- ggplot(data=Worldbank2010A,aes(x=Health.expenditure..total....of.GDP...SH.XPD.TOTL.ZS.,
+y=Immunization..DPT....of.children.ages.12.23.months...SH.IMM.IDPT.,
+xlab=("Health Expenditure"), ylab=("Immunization Rate")))+geom_point(stat="identity")+geom_jitter(height = 0.2)+
+labs(title = "Regression of Effect of Expenditure on Immunization in 2010",x = "Health Expenditure as Percent of GDP", y = "Immunization of Children")
+plot3+ geom_abline(intercept=A[1], slope=A[2], col="blue", size=1)+geom_smooth(method="lm", size=1, level=0.95)
+summary(model3)
+```
+
+
+This third model looking at 2010 statistics shows a stronger correlation. In this regression, the coeffecient is 1.9298 meaning that a one percent increase in health expenditures as a percent of GDP shows that there is 1.9298 percent increase in those that were immunized, and is also statistically significant.
+
+```{r, echo=FALSE , message=FALSE  ,  fig.width=12, fig.height=6 }
+#Regression Effect of Expenditure on Immunization 2014
+model4 <- lm(Immunization..DPT....of.children.ages.12.23.months...SH.IMM.IDPT. ~ Health.expenditure..total....of.GDP...SH.XPD.TOTL.ZS., data=Worldbank2014A)
+model4
+resid(model4)
+A<- coefficients(model4)
+plot4<- ggplot(data=Worldbank2014A,aes(x=Health.expenditure..total....of.GDP...SH.XPD.TOTL.ZS.,
+y=Immunization..DPT....of.children.ages.12.23.months...SH.IMM.IDPT.,
+xlab=("Health Expenditure"), ylab=("Immunization Rate")))+geom_point(stat="identity")+geom_jitter(height = 0.2)+
+labs(title = "Regression of effect of Health Expenditure on Immunization in 2014",x = "Health Expenditure as Percent of GDP", y = "Immunization of Children")
+plot4+ geom_abline(intercept=A[1], slope=A[2], col="blue", size=1)+geom_smooth(method="lm", size=1, level=0.95)
+summary(model4)
+```
+
+
+This fourth modellooking at 2014 statistics shows a stronger correlation. In this regression, the coeffecient is 2 meaning that a one percent increase in health expenditures as a percent of GDP shows that there is 2 percent increase in those that were immunized, and is also statistically significant.
+
+Overall we see that there are also increases in the effeciency of expenditures as a percent of GDP to immunization rates in the population.However the models aren't good fits as the r and r-squared numbers are pretty low. This effect can be explained by some health related effects as infrastuructre development has overall increased making access to immunization, easier and more effective so making expenditures as a percentage of GDP have a larger effect on immunization rates.
+
+
+```{r, echo=FALSE, message=FALSE,  fig.width=12, fig.height=6 }
+#Mortality rates by country
+ggplot(data=Worldbank2002A, aes(x = Country.Name,
+y = Mortality.rate..neonatal..per.1.000.live.births...SH.DYN.NMRT. ))+ geom_point()+
+labs(title = "Mortality Rates 2002",x = "Country Name", y = "Mortality Rates Per 1000 people")+theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+ggplot(data=Worldbank2006A, aes(x = Country.Name,
+y = Mortality.rate..neonatal..per.1.000.live.births...SH.DYN.NMRT. ))+ geom_point()+
+labs(title = "Mortality Rates 2006",x = "Country Name", y = "Mortality Rates Per 1000 people")+theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+ggplot(data=Worldbank2010A, aes(x = Country.Name,
+y = Mortality.rate..neonatal..per.1.000.live.births...SH.DYN.NMRT. ))+ geom_point()+
+labs(title = "Mortality Rates 2010",x = "Country Name", y = "Mortality Rates Per 1000 people")+theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+ggplot(data=Worldbank2014A, aes(x = Country.Name ,
+y = Mortality.rate..neonatal..per.1.000.live.births...SH.DYN.NMRT. ))+ geom_point()+
+labs(title = "Mortality Rates 2014",x = "Country Name", y = "Mortality Rates Per 1000 people")+ theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+```
+
+These four graphs show neonatal mortality rates for african countries in the years 2002, 2006,2010 and 2014. Overall mortality rates have decreased and life expectancy has increased for many africans countries. Angola has some of the higest mortality rates of about 50 people per 1000 or about 5 percent while, Lybia has a mortality rate of under one percent. 
+
+```{r,echo=FALSE, message=FALSE,  fig.width=12, fig.height=6 }
+#Regression Mortality Rates and Health Expendiutes 2002
+
+model5 <- lm(Mortality.rate..neonatal..per.1.000.live.births...SH.DYN.NMRT.~ Health.expenditure..total....of.GDP...SH.XPD.TOTL.ZS., data=Worldbank2002A)
+model5
+resid(model5)
+A<- coefficients(model5)
+plot5<- ggplot(data=Worldbank2002A,aes(x=Health.expenditure..total....of.GDP...SH.XPD.TOTL.ZS.,
+y= Mortality.rate..neonatal..per.1.000.live.births...SH.DYN.NMRT.,
+xlab=("Regression Health and Mortality 2002"), ylab=("Mortality Rate Rate")))+geom_point(stat="identity")+geom_jitter(height = 0.2)+
+labs(title = "Regression Health and Mortality 2002",x = "Health Expenditure as Percent of GDP", y = "Mortality Rate")
+plot5+ geom_abline(intercept=A[1], slope=A[3], col="blue", size=1)+geom_smooth(method="lm", size=1, level=0.95)
+summary(model5)
+```
+
+This regression shows that there has been a negative correlation between expenditures on GDP and mortality rates in 2002. For every one percent of health expenditures as a percent of GDP there is a decrease of the mortality rate by .03.
+
+```{r, echo=FALSE, message=FALSE,  fig.width=12, fig.height=6}
+#Regression Mortality Rates and Health Expendiutes 2006
+
+model6 <- lm(Mortality.rate..neonatal..per.1.000.live.births...SH.DYN.NMRT.~ Health.expenditure..total....of.GDP...SH.XPD.TOTL.ZS., data=Worldbank2006A)
+model6
+resid(model6)
+A<- coefficients(model6)
+plot6<- ggplot(data=Worldbank2006A,aes(x=Health.expenditure..total....of.GDP...SH.XPD.TOTL.ZS.,
+y= Mortality.rate..neonatal..per.1.000.live.births...SH.DYN.NMRT.,
+xlab=("Regression Health and Mortality 2006"), ylab=("Mortality Rate Rate")))+geom_point(stat="identity")+geom_jitter(height = 0.2)+
+labs(title = "Regression Health and Mortality 2006",x = "Health Expenditure as Percent of GDP", y = "Mortality Rate")
+plot6+ geom_abline(intercept=A[1], slope=A[3], col="blue", size=1)+geom_smooth(method="lm", size=1, level=0.95)
+summary(model6)
+```
+
+The year 2006 was an outlier, my regression shows that there was a positive correlation between expensiture on health as a percent of GDP and mortality rates, meaning that expenditures on health did lead to increases in mortalitiy rate.There are no clear reasons why this is the case other than a high number of deaths that year. In 2010, the correlation goes back to negative.
+
+
+```{r,echo=FALSE, message=FALSE , fig.width=12, fig.height=6 }
+
+#Regression Mortality Rates and Health Expendiutes 2010
+
+model7 <- lm(Mortality.rate..neonatal..per.1.000.live.births...SH.DYN.NMRT.~ Health.expenditure..total....of.GDP...SH.XPD.TOTL.ZS., data=Worldbank2010A)
+model7
+resid(model7)
+A<- coefficients(model7)
+plot7<- ggplot(data=Worldbank2010A,aes(x=Health.expenditure..total....of.GDP...SH.XPD.TOTL.ZS.,
+y= Mortality.rate..neonatal..per.1.000.live.births...SH.DYN.NMRT.,
+xlab=("Regression Health and Mortality 2010"), ylab=("Mortality Rate Rate")))+geom_point(stat="identity")+geom_jitter(height = 0.2)+
+labs(title = "Regression Health and Mortality 2010",x = "Health Expenditure as Percent of GDP", y = "Mortality Rate")
+plot7+ geom_abline(intercept=A[1], slope=A[7], col="blue", size=1)+geom_smooth(method="lm", size=1, level=0.95)
+summary(model7)
+```
+
+This regression shows that there continues to be a negative correlation between expenditures on GDP and mortality rates in 2010 as the coeffecient is -.2012. A one percent increase in health expenditures as a percnet of GDP translates to a reduction of mortality rates by .2012. For every one percent of health expenditures as a percent of GDP there is a decrease of the mortality rate by .2012.
+
+```{r,echo=FALSE, message=FALSE , fig.width=12, fig.height=6}
+
+#Regression Mortality Rates and Health Expendiutes 2014
+model8 <- lm(Mortality.rate..neonatal..per.1.000.live.births...SH.DYN.NMRT.~ Health.expenditure..total....of.GDP...SH.XPD.TOTL.ZS., data=Worldbank2014A)
+model8
+resid(model8)
+A<- coefficients(model8)
+plot8<- ggplot(data=Worldbank2014A,aes(x=Health.expenditure..total....of.GDP...SH.XPD.TOTL.ZS.,
+y= Mortality.rate..neonatal..per.1.000.live.births...SH.DYN.NMRT.,
+xlab=("Regression Health and Mortality 2014"), ylab=("Mortality Rate Rate")))+geom_point(stat="identity")+geom_jitter(height = 0.2)+
+labs(title = "Regression of Health Expenditures and Mortality 2014",x = "Health Expenditure as Percent of GDP", y = "Mortality Rate per Thousand")
+plot8+ geom_abline(intercept=A[1], slope=A[8], col="blue", size=1)+geom_smooth(method="lm", size=1, level=0.95)
+summary(model8)
+```
+
+This regression shows that in 2014, there continued to be a negative correlation between expenditures on GDP and mortality rates, as the coefficient is -.7228. For every one percent of health expenditures as a percent of GDP there is a decrease of the mortality rate by .7228. However much like the previous regression models, the correlation is not strong with an adjusted r squared value of 0.006119, which is an extremely weak correlation.
+
+Limitations
+
+The biggest limitation with the analysis are the fit of the regression models. The r's and r-squared are very low signifying that the correlation may be very low as well. There are many reasons why correlations can't be established. One is variance of expenditures among countries. Expenditures as a percent of GDP can vary form country to country depending on necessity. A country that is going through an infectious disease crisis might need to spend a higher percent on GDP on health than a country with a relativly healthier population. In 2006 there was a positive correlation between increases in expenditures and mortality rates which was strange compared to the other measures. 
+What would have helped my analysis would have been looking at individual countries and studying them over time to further detect patterns between increases and decreases in mortality rates. This would have been particularly helpful for countries with the most increases or decreases in health expenditures as a percent of GDP.
+
+Conclusion
+
+Although the regression fits are weak, there is are correlations between countries that spend higher on health and an increase in immmunization and disease prevention,and a decrease in mortality rates.Over time, the effects of health expenditures as a percent of GDP on the parameters, especially immunization increased over time.As mentioned before this is due to better infrastrucutre developments that improve the access of healthcare to people and the spread of immunization and medicines to people.
+
+Sources Cited
+World Bank Databases
+
