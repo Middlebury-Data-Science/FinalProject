@@ -57,7 +57,5 @@ The present analysis explores the comparative distributions of Dunkin’ Donuts 
 ## factor, coercing into character vector
 ```
 
-![](README_files/figure-html/unnamed-chunk-1-1.png)
-
 #Data
 Income and demographic data for this region was obtained from [Social Explorer](http://old.socialexplorer.com/pub/reportdata/HtmlResults.aspx?reportid=R11178485), and the MA shapefile was loaded [here](https://catalog.data.gov/dataset/tiger-line-shapefile-2015-state-massachusetts-current-census-tract-state-based-shapefile). 
