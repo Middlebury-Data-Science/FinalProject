@@ -1,4 +1,5 @@
 Delaney Moran  
+
 # Project Synopsis
 
 ## Differential Distributions of Starbucks and Dunkin' Donuts in Eastern MA
@@ -15,13 +16,6 @@ Delaney Moran
 
 
 
-
-```
-## OGR data source with driver: ESRI Shapefile 
-## Source: "./data/tl_2015_25_tract/", layer: "tl_2015_25_tract"
-## with 1478 features
-## It has 12 fields
-```
 
 ```
 ## Deleting rows:  5 6 8 13 199 200

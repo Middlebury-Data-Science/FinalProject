@@ -23,6 +23,7 @@ suppressPackageStartupMessages(library(rvest))
 suppressPackageStartupMessages(library(spatialEco))
 suppressPackageStartupMessages(library(plotly))
 suppressPackageStartupMessages(library(knitr))
+suppressPackageStartupMessages(library(USAboundaries))
 ```
 ###Abstract:
 
@@ -190,7 +191,7 @@ MAincomedata <- MAincomedata %>%
 #Load MA shapefiles
 #https://catalog.data.gov/dataset/tiger-line-shapefile-2015-state-massachusetts-current-census-tract-state-based-shapefile
 shapefile_path <- "./data/tl_2015_25_tract/"
-map_obj <- readOGR(dsn = shapefile_path, layer = "tl_2015_25_tract")
+map_obj <- readOGR(dsn = shapefile_path, layer = "tl_2015_25_tract", verbose = FALSE)
 
 # Convert Shapefile to ggplot Data Frame
 map_obj$id <- rownames(map_obj@data)
@@ -203,6 +204,19 @@ MAmap <- ggplot() +
   geom_path(size = 1.5) +
   coord_map()
 
+map <- us_counties(states = c("Massachusetts"))
+MA <- fortify(map)
+MA <- MA %>% 
+  mutate(East = ifelse(id == 3203, 1, 
+                ifelse(id == 2888, 2,
+                ifelse(id == 2111, 3,
+                ifelse(id == 2875, 4, 
+                ifelse(id == 2070, 5,
+                ifelse(id == 3122, 6, 0)))))))
+MA1 <- ggplot(MA, aes(long, lat, group=group)) +
+  geom_polygon(fill="white") +
+  geom_path() 
+
 #join the map data frame with the income data
 map_census <- inner_join(map_df, MAincomedata, by = c("GEOID" = "Geo_FIPS"))
 
@@ -211,6 +225,8 @@ MAmap +
   geom_polygon(data = map_census,
                aes(x = long, y = lat, group=group, fill = County))+
   ggtitle("Counties Surrounding Boston")
+
+
 
 incomes <- MAincomedata %>%
   group_by(County) %>%
@@ -460,17 +476,27 @@ map_census2 <- left_join(map_census, tracts_w_SBDD, by = "GEOID") %>%
 
 
 #Plot DD and SB locations!
-MAmap +
+# MAmap +
+#   geom_point(data = ddloc,
+#              aes(x = long, y = lat),
+#              color = 'orange',
+#              size = 1.5) +
+#   geom_point(data = sbloc,
+#              aes(x = long, y = lat),
+#              color = 'green',
+#              size = 1.5) +
+#   coord_map() +
+#   theme_bw() +
+#   labs(title = "Locations of Starbucks and Dunkin' Donuts in Eastern MA")
+MA1 +
   geom_point(data = ddloc,
-             aes(x = long, y = lat),
-             color = 'orange',
+             aes(x = long, y = lat, group = X),
+             color = 'darkorange',
              size = 1.5) +
   geom_point(data = sbloc,
-             aes(x = long, y = lat),
+             aes(x = long, y = lat, group = X),
              color = 'green',
              size = 1.5) +
-  coord_map() +
-  theme_bw() +
   labs(title = "Locations of Starbucks and Dunkin' Donuts in Eastern MA")
 
 totals2 <- totals %>% 

@@ -4,6 +4,7 @@ output:
     keep_md: yes
 author: "Delaney Moran"
 ---
+
 # Project Synopsis
 
 ## Differential Distributions of Starbucks and Dunkin' Donuts in Eastern MA
@@ -20,7 +21,7 @@ author: "Delaney Moran"
 
 
 
-```{r, echo=FALSE, warning = FALSE, error = FALSE}
+```{r, echo=FALSE, warning = FALSE, error = FALSE, message=FALSE}
 suppressPackageStartupMessages(library(dplyr))
 suppressPackageStartupMessages(library(ggplot2))
 suppressPackageStartupMessages(library(ggmap))
@@ -37,6 +38,7 @@ suppressPackageStartupMessages(library(rvest))
 suppressPackageStartupMessages(library(spatialEco))
 suppressPackageStartupMessages(library(plotly))
 suppressPackageStartupMessages(library(knitr))
+suppressPackageStartupMessages(library(USAboundaries))
 
 Eastern <- c(5, 9, 17, 21, 23, 25)
 
@@ -81,18 +83,18 @@ MAincomedata <- MAincomedata %>%
 #Load MA shapefiles
 #https://catalog.data.gov/dataset/tiger-line-shapefile-2015-state-massachusetts-current-census-tract-state-based-shapefile
 shapefile_path <- "./data/tl_2015_25_tract/"
-map_obj <- readOGR(dsn = shapefile_path, layer = "tl_2015_25_tract")
+map_obj <- readOGR(dsn = shapefile_path, layer = "tl_2015_25_tract", verbose = FALSE)
 
 # Convert Shapefile to ggplot Data Frame
 map_obj$id <- rownames(map_obj@data)
 map_points <- fortify(map_obj, region="id")
 map_df <- inner_join(map_points, map_obj@data, by="id")
 
-MAmap <- ggplot() +
-  geom_polygon(aes(x = long, y = lat, group=group), data=map_df) +
-  labs(x="Longitude", y="Latitude") +
-  geom_path(size = 1.5) +
-  coord_map()
+# MAmap <- ggplot() +
+#   geom_polygon(aes(x = long, y = lat, group=group), data=map_df) +
+#   labs(x="Longitude", y="Latitude") +
+#   geom_path(size = 1.5) +
+#   coord_map()
 
 map_census <- inner_join(map_df, MAincomedata, by = c("GEOID" = "Geo_FIPS"))
 
@@ -181,17 +183,35 @@ map_census2 <- left_join(map_census, tracts_w_SBDD, by = "GEOID") %>%
          dd_1000 = ifelse(dd_1000 == Inf, NA, dd_1000),
          dd_1000 = ifelse(total_population < 1000, NA, dd_1000))
 
-MAmap +
+# MAmap +
+#   geom_point(data = ddloc,
+#              aes(x = long, y = lat),
+#              color = 'orange',
+#              size = 1.5) +
+#   geom_point(data = sbloc,
+#              aes(x = long, y = lat),
+#              color = 'green',
+#              size = 1.5) +
+#   coord_map() +
+#   theme_bw() +
+#   labs(title = "Locations of Starbucks and Dunkin' Donuts in Eastern MA")
+
+
+map <- us_counties(states = c("Massachusetts"))
+MA <- fortify(map)
+MA1 <- ggplot(MA, aes(long, lat, group=group)) +
+  geom_polygon(fill="white") +
+  geom_path() 
+
+MA1 +
   geom_point(data = ddloc,
-             aes(x = long, y = lat),
-             color = 'orange',
+             aes(x = long, y = lat, group = X),
+             color = 'darkorange',
              size = 1.5) +
   geom_point(data = sbloc,
-             aes(x = long, y = lat),
+             aes(x = long, y = lat, group = X),
              color = 'green',
              size = 1.5) +
-  coord_map() +
-  theme_bw() +
   labs(title = "Locations of Starbucks and Dunkin' Donuts in Eastern MA")
 
 ```
@@ -199,7 +219,7 @@ MAmap +
 __Figure 1.__ Orange dots represent Dunkin Donuts locations and green dots represent Starbucks locations in the greater Boston area.
 
 
-```{r, echo= FALSE, warning=FALSE}
+```{r, echo= FALSE, warning=FALSE, message=FALSE}
 inc_data <- MAincomedata2 %>% 
   select(Geo_FIPS, dd_1000, sb_1000, med_inc) %>% 
   filter(!is.na(dd_1000), !is.na(sb_1000))
@@ -221,7 +241,7 @@ sbinccoefs <- coefficients(sb_inc)
 ```
 
 
-```{r, echo= FALSE, warning=FALSE}
+```{r, echo= FALSE, warning=FALSE, message=FALSE}
 
 ggplot(sb_data2, aes(x = med_inc, y = Density)) +
   geom_point() +
