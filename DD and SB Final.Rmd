@@ -1,10 +1,9 @@
 ---
-title: "Dunkin Donuts and Starbucks Distributions"
+title: "Differential Distributions of Starbucks and Dunkin' Donuts in Eastern MA"
 output: html_document
 author: "Delaney Moran"
 date: "May 24, 2016"
 ---
-
 
 ```{r, echo=FALSE, warning=FALSE}
 # Load all the packages
@@ -25,12 +24,13 @@ suppressPackageStartupMessages(library(spatialEco))
 suppressPackageStartupMessages(library(plotly))
 suppressPackageStartupMessages(library(knitr))
 ```
-#Abstract:
+###Abstract:
 
-  The present analysis explores the comparative distributions of Dunkin’ Donuts and Starbucks in eastern Massachusetts. These two franchises are both highly successful coffeehouse chains despite a competitive market with low profit margins. Massachusetts was selected as the location of interested because it is my home state, and I know from experience there are strong loyalties by different groups of people to both Dunkin’ Donuts and Starbucks. Mapping both franchises revealed that there are many more Dunkin’ Donuts than Starbucks locations in eastern Massachusetts, and their densities differ by city vs. suburbs as well as by county. Additionally, the franchise density of Starbucks and Dunkin’ Donuts in a census tract are moderately associated with income. Overall, the present investigation reveals that Dunkin’ Donuts and Starbucks distributions differ both geographically, but also economically.
+  The present analysis explores the comparative distributions of Dunkin’ Donuts and Starbucks in eastern Massachusetts. It pulls income and demographic data from [Social Explorer](http://old.socialexplorer.com/pub/reportdata/HtmlResults.aspx?reportid=R11178485) and location data from the Google Places API radar searches. The MA shapefile was loaded [here](https://catalog.data.gov/dataset/tiger-line-shapefile-2015-state-massachusetts-current-census-tract-state-based-shapefile).
 
+  Mapping both franchises in the six counties around Boston revealed that there are many more Dunkin’ Donuts than Starbucks locations in eastern Massachusetts. Additionally, the two franchises have different geographic distributions and appear to cater to different clientele, both spatially and economically. Starbucks are more densely distributed in cities and located in areas with higher median incomes. Dunkin' Donuts are more densely distributed in the suburbs, and located in areas with lower median incomes.
 
-#Introduction:
+###Introduction:
 
   Global coffee consumption as well as the U.S. coffeehouse industry have been steadily on the rise in since 2009 (ICO; IBISWorld). In the United States, the two leading coffeehouse chains are Starbucks Corporation and Dunkin’ Brands Inc., which collectively comprised over 60% of the coffeehouse market in 2014 (CIEEDAC). Despite sharing a competitive market with relatively low profit margins, the two chains have steadily expanded their number of locations over the past ten years (Starbucks, "Number of Starbucks…”; Dunkin’ Donuts, “Number of Dunkin’…”).  
   
@@ -41,6 +41,8 @@ suppressPackageStartupMessages(library(knitr))
   Starbucks, founded in Seattle, WA in 1971, was born out of the desire to create a coffeehouse with the same feel as traditional Italian coffee bars. CEO, Howard Schultz, wanted to create “a place for conversation and a sense of community, a third place between work and home” (Starbucks, "Company Information”). The Starbucks website emphasizes both the premium quality of its products, but also heavily underscores this community aspect, which Dunkin’ Donuts does not mention at all. The company mission is “to inspire and nurture the human spirit – one person, one cup, and one neighborhood at a time” and they strive to “make sure everything [they] do is through the lens of humanity – from our commitment to the highest quality coffee in the world, to the way we engage with our customers and communities to do business responsibly” (Starbucks, "Company Information”).   
   
   This community experience comes at a price, however. A preliminary price analysis of both franchises shows that for comparable items, Starbucks is reliably more expensive. One notable exception is for their breakfast sandwiches, where Dunkin’ Donuts’ is more expensive, though the difference is very small. All price estimates came from fastfoodmenuprices.com and are estimates only. 
+  
+  
   
  
 ```{r, echo=FALSE}
@@ -125,20 +127,20 @@ price_comp <- full_join(DDprices_sel, SBprices_sel, by = c("oz", "Food")) %>%
          !is.na(SBprice)) %>% 
   mutate(Percent_Difference = ((SBprice - DDprice)/DDprice)*100)
 
-knitr::kable(price_comp)
+knitr::kable(price_comp, digits = 2)
 ```
 
 
-These observations about company differences led to two main hypotheses.
+These observations about company differences led to two main hypotheses: 
+
  * Because of its in-state roots, there are more Dunkin’ Donuts in this region than Starbucks. 
  * The two franchises market to different clientele, both spatially and economically.  
 
-#Methods:
+###Methods:
 
-##Area of Interest
+####Area of Interest
 This investigation explores the distribution of both franchises in the six counties comprising and surrounding Boston: Suffolk, Essex, Middlesex, Norfolk, Bristol, and Plymouth. 
 
-##Data
 Income and demographic data for this region was obtained from [Social Explorer](http://old.socialexplorer.com/pub/reportdata/HtmlResults.aspx?reportid=R11178485), and the MA shapefile was loaded [here](https://catalog.data.gov/dataset/tiger-line-shapefile-2015-state-massachusetts-current-census-tract-state-based-shapefile). 
 
 
@@ -217,8 +219,8 @@ incomes <- MAincomedata %>%
 knitr::kable(incomes)
 ```
  
-##Franchise Locations
- The franchise location data was scraped from Google. The Google Places API allows for radar searches that take a latitude, longitude, and radius, and return all the results of a search query (in this case, Starbucks and Dunkin' Donuts) within that radius. I adapted code from a previous student ([wjones127](https://github.com/wjones127/franchise-densities)) and covered the area of interest in radar searches. See the plot below. 
+####Franchise Locations
+ The franchise location data was scraped from the Google Places API. The Google Places API allows for radar searches that take a latitude, longitude, and radius, and return all the results of a search query (in this case, Starbucks and Dunkin' Donuts) within that radius. I adapted code from a previous student ([wjones127](https://github.com/wjones127/franchise-densities)) and covered the area of interest in radar searches. See the plot below. 
 
 ```{r, echo=FALSE}
 #code from other student to search centers:
@@ -283,7 +285,7 @@ MAmap +
 ```
 
 
-Below is a map displaying the results of the radar searches.  
+Below is a map displaying the results of the radar searches. Dunkin' Donuts locations are demarcated with an orange dot and Starbucks locations with a green dot.   
 
 ```{r, echo=FALSE, warning=FALSE, message = FALSE}
 #The following function was also adapted from the same student to put the locations in a data frame. To run it yourself, you'd need your own API key. 
@@ -471,14 +473,19 @@ MAmap +
   theme_bw() +
   labs(title = "Locations of Starbucks and Dunkin' Donuts in Eastern MA")
 
-knitr::kable(totals)
+totals2 <- totals %>% 
+  rename(Starbucks = Starbucks_Count,
+         DunkinDonuts = DunkinDonuts_Count) %>% 
+  gather(totals)
+
+knitr::kable(totals2, col.names = c("Franchise", "Count"))
 ```
 
 As is evident in both the map and the above tables, there are almost fourfold the number of Dunkin' Donuts as Starbucks locations in eastern MA. 
 
-#Spatial Distribution Analysis
+###Spatial Distribution Analysis
 
-In order to test the hypothesis that the two franchises cater to different populations, and thus have different distribution patterns, it is useful to graph the densities of one against the other. A positive trend would indicate that both franchises pick locations in the same areas, while a negative trend would indicate that their distributions do not overlap. 
+In order to test the hypothesis that the two franchises cater to different populations, and thus have different distribution patterns, it is useful to graph the densities of one against the other. 
 
 ```{r, echo= FALSE}
 MAincomedata2 <- MAincomedata2 %>% 
@@ -496,7 +503,9 @@ ggplotly(scatterplot)
 
 ```
 
-There is a net positive trend here, which makes sense; in areas with more development, we would expect more of both franchises. 
+
+Each dot represents a census tract, with the x value carrying information about Dunkin Donuts density in that tract and the y value carrying information about Starbucks density.  A positive trend would indicate that both franchises pick locations in the same areas, while a negative trend would indicate that their distributions do not overlap. Here, there is a net positive trend, which makes sense; in areas with more development, we would expect more of both franchises. Additionally, certain trendlines appear of common ratios of the two franchises.
+
 To examine the differences between the two distributions, we need to look at the data more closely. The first variable I looked at was city vs. subarbs, where Suffolk County was classified as Boston, proper, and all of the other counties were considered suburbs. When the data is split like this, an interesting trend emerges. The following graph shows the franchise densities of Starbucks and Dunkin' Donuts in the city vs. the subarbs.  
 
 ```{r, echo= FALSE, warning=FALSE}
@@ -557,16 +566,24 @@ ggplot(percentchange, aes(x = Franchise, y = Percent_Change, fill = Franchise)) 
   geom_hline(yintercept = 0) +
   ggtitle("Percent Difference in Franchise Density in Boston vs. the Suburbs")
 
+
+
+
 city_descript2 <- city_descript2[, c(2, 4, 3, 5)]
 
 knitr::kable(city_descript2)
+
+
 knitr::kable(percentchange)
 
 ```
 
 I wanted to make this using plotly (instead of the ancillary tables), but there is a documented bug where plotly renders negative ggplot bar graphs positive, which takes away the main message of the graph.
 
-###Distributions by County
+
+
+
+#####Distributions by County
 
 The distribution of Starbucks and Dunkin' Donuts can be further explored by breaking up the "Suburbs" category. The below plot shows the densities of Dunkin' Donuts and Starbucks by county. Again, we see that the densities of one franchise does not predict the other. In fact, there almost appears to be an inverse trend. 
 Additionally, average median income for each county is displayed as a point (scaled down by a factor 10^-6). 
@@ -582,11 +599,11 @@ region2 <- region %>%  gather("Franchise", "Density", 2:3)
 
 region3 <- region2 %>% 
   mutate(level = ifelse(County == "Bristol", 1, 
-                  ifelse(County == "Essex", 4,
-                  ifelse(County == "Middlesex", 5,
-                  ifelse(County == "Norfolk", 3,
+                  ifelse(County == "Essex", 3,
+                  ifelse(County == "Middlesex", 6,
+                  ifelse(County == "Norfolk", 4,
                   ifelse(County == "Plymouth", 2,
-                  ifelse(County == "Suffolk", 6, NA)))))))
+                  ifelse(County == "Suffolk", 5, NA)))))))
 
 incomes2 <- incomes %>% 
   mutate(scaled_income = Avg_Median_Income/1000000) %>% 
@@ -606,6 +623,7 @@ ggplotly(countybreakdown)
 
 ```
 
+
 A two-way between-groups ANOVA showed that the interaction between franchise and county is statiscally significant. F = 5.574, p 0.0000416. See the output below. 
 ```{r, echo= FALSE, warning=FALSE}
 county_data <- MAincomedata2 %>% 
@@ -622,13 +640,15 @@ summary(county_franchise)
 
 
 
-#Economic Distribution Analysis
 
-The next question I looked into was whether the franchise distributions were at all related to income in those areas.
+###Economic Distribution Analysis
+
+The next research question was whether the franchise distributions are related to income.
 
 In order to test this, I performed linear regressions using median income as the predictor variable of Dunkin' Donuts and Starbucks densities on the census tract level. The tables below show the resulting coefficients of the regressions, as well as visualizations. 
 
-###Dunkin Donuts
+
+#####Starbucks
 
 ```{r, echo= FALSE, warning=FALSE}
 inc_data <- MAincomedata2 %>% 
@@ -646,20 +666,9 @@ sb_data2 <- filter(inc_data, Franchise == "Starbucks")
 sb_inc <- lm(Density ~ med_inc, data = sb_data2)
 sbinccoefs <- coefficients(sb_inc)
 
-knitr::kable(summary(dd_inc)$coef)
-```
 
 
-###Starbucks
-```{r, echo= FALSE, warning=FALSE}
-knitr::kable(summary(sb_inc)$coef) 
-
-ggplot(dd_data2, aes(x = med_inc, y = Density)) +
-  geom_point() +
-  geom_abline(slope = ddinccoefs[2], intercept = ddinccoefs[1], col = "darkorange", size =1.5) +
-  xlab("Median Income") +
-  ylab("Franchise Density")+
-  ggtitle("Dunkin' Donuts Density by Median Income")
+knitr::kable(summary(sb_inc)$coef)
 
 ggplot(sb_data2, aes(x = med_inc, y = Density)) +
   geom_point() +
@@ -670,15 +679,29 @@ ggplot(sb_data2, aes(x = med_inc, y = Density)) +
 
 ```
 
+
+
+#####Dunkin' Donuts
+```{r, echo= FALSE, warning=FALSE}
+knitr::kable(summary(dd_inc)$coef)
+
+ggplot(dd_data2, aes(x = med_inc, y = Density)) +
+  geom_point() +
+  geom_abline(slope = ddinccoefs[2], intercept = ddinccoefs[1], col = "darkorange", size =1.5) +
+  xlab("Median Income") +
+  ylab("Franchise Density")+
+  ggtitle("Dunkin' Donuts Density by Median Income")
+```
+
 A linear regression revealed that median income did significantly predict Starbucks densities, such that census tracts with higher median incomes had more Starbucks. This was subtle (a very small slope), but nonetheless significant (p = 0.0017). For Dunkin' Donuts, the relationship was only marginally significant (p = 0.0660), and equally subtle, but, interestingly, of opposite magnitude! In census tracts with higher median incomes, there were actually fewer Dunkin' Donuts.
 
-#Conclusion
+###Conclusion
 Overall, Starbucks and Dunkin' Donuts do have different distributions and appear to cater to different clientele, both spatially and economically. Starbucks are more densely distributed in cities and located in areas with higher median incomes. Dunkin' Donuts are more densely distributed in the suburbs, and located in areas with lower median incomes.
 
 It is important to note, however, that this analysis only applied to the counties comprising and surrounding Boston. It would be interesting to explore whether the same trends apply throughout the state. An analysis of major coffeehouse franchises on a national scale would also be very interesting. Dunkin' Donuts is not uniformly spread throughout the country; rather it clusters in the northeast. The main coffee-chain competitors of Starbucks in other regions, must be different. 
 
 
-#References
+###References
 
 ACS 2014 (5-Year Estimates). Rep. New York City, NY: Social Explorer, 2016. <http://old.socialexplorer.com/pub/reportdata/HtmlResults.aspx?reportid=R11178485>.
 
