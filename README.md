@@ -15,6 +15,9 @@ Delaney Moran
   Mapping both franchises in the six counties around Boston revealed that there are many more Dunkin’ Donuts than Starbucks locations in eastern Massachusetts. Additionally, the two franchises have different geographic distributions and appear to cater to different clientele, both spatially and economically. Starbucks are more densely distributed in cities and located in areas with higher median incomes. Dunkin' Donuts are more densely distributed in the suburbs, and located in areas with lower median incomes.
 
 
+Project can also be viewed [here](http://rpubs.com/DelaneyMoran/SBDD_distribution_analysis).
+
+
 
 
 ```
