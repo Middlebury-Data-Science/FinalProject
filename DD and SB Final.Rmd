@@ -1,0 +1,763 @@
+---
+title: "Differential Distributions of Starbucks and Dunkin' Donuts in Eastern MA"
+output: html_document
+author: "Delaney Moran"
+date: "May 24, 2016"
+---
+
+```{r, echo=FALSE, warning=FALSE}
+# Load all the packages
+suppressPackageStartupMessages(library(dplyr))
+suppressPackageStartupMessages(library(ggplot2))
+suppressPackageStartupMessages(library(ggmap))
+suppressPackageStartupMessages(library(magrittr))
+suppressPackageStartupMessages(library(tidyr))
+suppressPackageStartupMessages(library(rgdal))
+suppressPackageStartupMessages(library(stringr))
+suppressPackageStartupMessages(library(jsonlite))
+suppressPackageStartupMessages(library(RCurl))
+suppressPackageStartupMessages(library(maptools))
+suppressPackageStartupMessages(library(rgeos))
+suppressPackageStartupMessages(library(leaflet))
+suppressPackageStartupMessages(library(rvest))
+suppressPackageStartupMessages(library(spatialEco))
+suppressPackageStartupMessages(library(plotly))
+suppressPackageStartupMessages(library(knitr))
+suppressPackageStartupMessages(library(USAboundaries))
+```
+###Abstract:
+
+  The present analysis explores the comparative distributions of Dunkin’ Donuts and Starbucks in eastern Massachusetts. It pulls income and demographic data from [Social Explorer](http://old.socialexplorer.com/pub/reportdata/HtmlResults.aspx?reportid=R11178485) and location data from the Google Places API radar searches. The MA shapefile was loaded [here](https://catalog.data.gov/dataset/tiger-line-shapefile-2015-state-massachusetts-current-census-tract-state-based-shapefile).
+
+  Mapping both franchises in the six counties around Boston revealed that there are many more Dunkin’ Donuts than Starbucks locations in eastern Massachusetts. Additionally, the two franchises have different geographic distributions and appear to cater to different clientele, both spatially and economically. Starbucks are more densely distributed in cities and located in areas with higher median incomes. Dunkin' Donuts are more densely distributed in the suburbs, and located in areas with lower median incomes.
+
+###Introduction:
+
+  Global coffee consumption as well as the U.S. coffeehouse industry have been steadily on the rise in since 2009 (ICO; IBISWorld). In the United States, the two leading coffeehouse chains are Starbucks Corporation and Dunkin’ Brands Inc., which collectively comprised over 60% of the coffeehouse market in 2014 (CIEEDAC). Despite sharing a competitive market with relatively low profit margins, the two chains have steadily expanded their number of locations over the past ten years (Starbucks, "Number of Starbucks…”; Dunkin’ Donuts, “Number of Dunkin’…”).  
+  
+  The two chains are distinct from each other, however, in several regards. For one, Starbucks is a much larger, international corporation, and the second most valuable fast food brand worldwide behind McDonalds (Brown), bringing in over $19 billion in revenue in 2015 (Starbucks, "Revenue of Starbucks…”), whereas Dunkin’ Donuts, exclusively domestic, made just over $800 million in 2015 (Dunkin' Donuts, "Revenue of Dunkin').   
+  
+  Additionally, the two chains have very distinct company philosophies. Dunkin’ Donuts was founded in 1950 in Quincy, MA by William Rosenberg. He started with a canteen truck, selling refreshments to workers at factories and construction sites. He saw that his most lucrative items were coffee and donuts and so decided to open a permenant location selling these items (“William Rosenberg”). The Dunkin' Donuts mission is to “make and serve the freshest, most delicious coffee and donuts quickly and courteously in modern, well-merchandised stores” (Dunkin Donuts, “Dunkin’ Donuts”). Its website emphasizes speed of service and customer loyalty.
+  
+  Starbucks, founded in Seattle, WA in 1971, was born out of the desire to create a coffeehouse with the same feel as traditional Italian coffee bars. CEO, Howard Schultz, wanted to create “a place for conversation and a sense of community, a third place between work and home” (Starbucks, "Company Information”). The Starbucks website emphasizes both the premium quality of its products, but also heavily underscores this community aspect, which Dunkin’ Donuts does not mention at all. The company mission is “to inspire and nurture the human spirit – one person, one cup, and one neighborhood at a time” and they strive to “make sure everything [they] do is through the lens of humanity – from our commitment to the highest quality coffee in the world, to the way we engage with our customers and communities to do business responsibly” (Starbucks, "Company Information”).   
+  
+  This community experience comes at a price, however. A preliminary price analysis of both franchises shows that for comparable items, Starbucks is reliably more expensive. One notable exception is for their breakfast sandwiches, where Dunkin’ Donuts’ is more expensive, though the difference is very small. All price estimates came from fastfoodmenuprices.com and are estimates only. 
+  
+  
+  
+ 
+```{r, echo=FALSE}
+webpage_DDprices <- "http://www.fastfoodmenuprices.com/dunkin-donuts-prices/"
+DDprices <- webpage_DDprices %>%
+  read_html() %>%
+  html_nodes("table") %>%
+  .[[1]] %>%
+  html_table()
+
+DDcold <- "Iced|Frozen|Coolatta"
+
+DDprices <- DDprices %>% 
+  mutate(iced = grepl(DDcold, Food))
+
+#clean up prices and names
+DDprices <- DDprices %>% 
+  mutate(oz = ifelse(Size == "Small" & iced == "FALSE", 10, 
+                    ifelse (Size == "Small" & iced == "TRUE", 14, 
+                    ifelse(Size == "Medium" & iced == "FALSE", 16, 
+                    ifelse(Size == "Medium" & iced == "TRUE", 24,
+                    ifelse(Size == "Large" & iced == "FALSE", 20, 
+                    ifelse(Size == "Large" & iced == "TRUE", 32,
+                    ifelse(Size == "X-Large" & iced == "FALSE", 24, NA))))))),
+         Food = ifelse(Food == "Coolatta or Coolatta Lite", "Coolatta/Frappuccino", 
+                ifelse(Food == "Iced Tea or Iced Green Tea (Sweetened or Unsweetened)", "Iced Tea", 
+                ifelse(Food == "Donut", "Donut/Pastry", 
+                ifelse(Food == "Classic Egg & Cheese with (Ham, Bacon, or Sausage)", 
+                                                    "Breakfast Sandwich", Food))))) %>% 
+  rename(DDprice = Price)
+
+
+webpage_SBprices <- "http://www.fastfoodmenuprices.com/starbucks-prices/"
+SBprices <- webpage_SBprices %>%
+  read_html() %>%
+  html_nodes("table") %>%
+  .[[1]] %>%
+  html_table()
+
+#Starbucks and Dunkin Donuts have different sizes of coffee (they are also different depending whether the beverage is iced). The following code organizes both franchises' menus so their products can be compared.   
+SBcold <- "Iced|Frappuccino|Refreshers"
+SBprices <- SBprices %>% 
+  mutate(iced = grepl(SBcold, Food))
+
+SBprices <- SBprices %>% 
+  mutate(oz = ifelse(Size == "Tall", 12, 
+              ifelse(Size == "Grande", 16, 
+              ifelse(Size == "Venti" & iced == "FALSE", 20, 
+              ifelse(Size == "Venti" & iced== "TRUE", 24,
+               ifelse(Size == "Trenta", 30,
+              ifelse(Size == "Mini", 10, NA)))))),
+         Food = ifelse(Food == "Caffe Latte", "Latte",
+                ifelse(Food == "Freshly Brewed Coffee", "Coffee", 
+                ifelse(Food == "Iced Coffee (with or without Milk)", "Iced Coffee",
+                ifelse(Food == "Coffee Frappuccino", "Coolatta/Frappuccino",
+                ifelse(Food == "Teavana® Shaken Iced Tea", "Iced Tea",
+                ifelse(Food == "Butter Croissant", "Croissant",
+                ifelse(Food == "Sausage & Cheddar Breakfast Sandwich", "Breakfast Sandwich",
+                ifelse(Food == "Morning Bun", "Donut/Pastry", Food))))))))) %>% 
+  rename(SBprice = Price)
+         
+
+menu_items <-c("Coffee", "Iced Coffee", "Coolatta/Frappuccino", 
+              "Latte", "Iced Tea", "Donut/Pastry", "Breakfast Sandwich", 
+              "Croissant")
+
+DDprices_sel <- DDprices %>% 
+  filter(Food %in% menu_items) %>% 
+  select(Food, oz, DDprice)
+
+SBprices_sel <- SBprices %>% 
+  filter(Food %in% menu_items) %>% 
+  select(Food, oz, SBprice)
+
+#join the selected menu items that both franchises sell. There was something weird with the numerics of the SB data so I corrected for that
+price_comp <- full_join(DDprices_sel, SBprices_sel, by = c("oz", "Food")) %>% 
+  mutate(SBprice = gsub("[[:punct:]]", "", SBprice),
+         SBprice = as.numeric(SBprice)/100, 
+         DDprice = sub("[[:punct:]]", "", DDprice),
+         DDprice = as.numeric(DDprice)) %>% 
+  filter(!is.na(DDprice),
+         !is.na(SBprice)) %>% 
+  mutate(Percent_Difference = ((SBprice - DDprice)/DDprice)*100)
+
+knitr::kable(price_comp, digits = 2)
+```
+
+
+These observations about company differences led to two main hypotheses: 
+
+ * Because of its in-state roots, there are more Dunkin’ Donuts in this region than Starbucks. 
+ * The two franchises market to different clientele, both spatially and economically.  
+
+###Methods:
+
+####Area of Interest
+This investigation explores the distribution of both franchises in the six counties comprising and surrounding Boston: Suffolk, Essex, Middlesex, Norfolk, Bristol, and Plymouth. 
+
+Income and demographic data for this region was obtained from [Social Explorer](http://old.socialexplorer.com/pub/reportdata/HtmlResults.aspx?reportid=R11178485), and the MA shapefile was loaded [here](https://catalog.data.gov/dataset/tiger-line-shapefile-2015-state-massachusetts-current-census-tract-state-based-shapefile). 
+
+
+```{r, cache=TRUE, echo=FALSE, warning=FALSE, message=FALSE}
+
+#County codes for Counties in the greater Boston area
+Eastern <- c(5, 9, 17, 21, 23, 25)
+
+#downloaded from social explorer ACS2014
+MAincomedata <-read.csv("./data/MAincomedata.csv")
+
+#filter to only tracts in counties in eastern MA and select relevant columns
+MAincomedata <- MAincomedata %>%
+  filter(Geo_STATE == 25) %>%
+  filter(Geo_COUNTY %in% Eastern) %>%
+  select(Geo_NAME, Geo_QName, Geo_STATE, Geo_COUNTY, Geo_FIPS, Geo_TRACT,
+         SE_T001_001, SE_T002_002, SE_T057_001,
+         SE_T056_001,
+         SE_T056_002,
+         SE_T056_003,
+         SE_T056_004,
+         SE_T056_005,
+         SE_T056_006,
+         SE_T056_007,
+         SE_T056_008,
+         SE_T056_009,
+         SE_T056_010,
+         SE_T056_011,
+         SE_T056_012,
+         SE_T056_013,
+         SE_T056_014,
+         SE_T056_015,
+         SE_T056_016,
+         SE_T056_017) %>%
+  rename(total_population = SE_T001_001,
+         pop_density = SE_T002_002,
+         med_inc = SE_T057_001) %>%
+  filter(!is.na(med_inc)) %>%
+  mutate(Geo_FIPS = as.factor(Geo_FIPS)) %>%
+  mutate(County = ifelse(Geo_COUNTY == 5, "Bristol",
+                  ifelse(Geo_COUNTY == 9, "Essex",
+                  ifelse(Geo_COUNTY == 17, "Middlesex",
+                  ifelse(Geo_COUNTY == 21, "Norfolk",
+                  ifelse(Geo_COUNTY == 23, "Plymouth",
+                  ifelse(Geo_COUNTY == 25, "Suffolk", NA)))))))
+
+#Load MA shapefiles
+#https://catalog.data.gov/dataset/tiger-line-shapefile-2015-state-massachusetts-current-census-tract-state-based-shapefile
+shapefile_path <- "./data/tl_2015_25_tract/"
+map_obj <- readOGR(dsn = shapefile_path, layer = "tl_2015_25_tract", verbose = FALSE)
+
+# Convert Shapefile to ggplot Data Frame
+map_obj$id <- rownames(map_obj@data)
+map_points <- fortify(map_obj, region="id")
+map_df <- inner_join(map_points, map_obj@data, by="id")
+
+MAmap <- ggplot() +
+  geom_polygon(aes(x = long, y = lat, group=group), data=map_df) +
+  labs(x="Longitude", y="Latitude") +
+  geom_path(size = 1.5) +
+  coord_map()
+
+map <- us_counties(states = c("Massachusetts"))
+MA <- fortify(map)
+MA <- MA %>% 
+  mutate(East = ifelse(id == 3203, 1, 
+                ifelse(id == 2888, 2,
+                ifelse(id == 2111, 3,
+                ifelse(id == 2875, 4, 
+                ifelse(id == 2070, 5,
+                ifelse(id == 3122, 6, 0)))))))
+MA1 <- ggplot(MA, aes(long, lat, group=group)) +
+  geom_polygon(fill="white") +
+  geom_path() 
+
+#join the map data frame with the income data
+map_census <- inner_join(map_df, MAincomedata, by = c("GEOID" = "Geo_FIPS"))
+
+#MA COUNTIES OF INTEREST
+MAmap +
+  geom_polygon(data = map_census,
+               aes(x = long, y = lat, group=group, fill = County))+
+  ggtitle("Counties Surrounding Boston")
+
+
+
+incomes <- MAincomedata %>%
+  group_by(County) %>%
+  summarise(Avg_Median_Income = mean(med_inc))
+
+knitr::kable(incomes)
+```
+ 
+####Franchise Locations
+ The franchise location data was scraped from the Google Places API. The Google Places API allows for radar searches that take a latitude, longitude, and radius, and return all the results of a search query (in this case, Starbucks and Dunkin' Donuts) within that radius. I adapted code from a previous student ([wjones127](https://github.com/wjones127/franchise-densities)) and covered the area of interest in radar searches. See the plot below. 
+
+```{r, echo=FALSE}
+#code from other student to search centers:
+makeCircle <- function(LonDec, LatDec, Km, group) {#Corrected function
+  #LatDec = latitude in decimal degrees of the center of the circle
+  #LonDec = longitude in decimal degrees
+  #Km = radius of the circle in kilometers
+  ER <- 6371 #Mean Earth radius in kilometers. Change this to 3959 and you will have your function working in miles.
+  AngDeg <- seq(1:360) #angles in degrees
+  Lat1Rad <- LatDec*(pi/180)#Latitude of the center of the circle in radians
+  Lon1Rad <- LonDec*(pi/180)#Longitude of the center of the circle in radians
+  AngRad <- AngDeg*(pi/180)#angles in radians
+  Lat2Rad <-asin(sin(Lat1Rad)*cos(Km/ER)+cos(Lat1Rad)*sin(Km/ER)*cos(AngRad)) #Latitude of each point of the circle rearding to angle in radians
+  Lon2Rad <- Lon1Rad+atan2(sin(AngRad)*sin(Km/ER)*cos(Lat1Rad),cos(Km/ER)-sin(Lat1Rad)*sin(Lat2Rad))#Longitude of each point of the circle rearding to angle in radians
+  Lat2Deg <- Lat2Rad*(180/pi)#Latitude of each point of the circle rearding to angle in degrees (conversion of radians to degrees deg = rad*(180/pi) )
+  Lon2Deg <- Lon2Rad*(180/pi)#Longitude of each point of the circle rearding to angle in degrees (conversion of radians to degrees deg = rad*(180/pi) )
+  # output dataframe of locations
+  return(data_frame(long = Lon2Deg, lat = Lat2Deg, group = group))
+}
+
+#Basically using trial and error, I selected the latitude and longitude of centers of radar searches that would cover my whole region
+search.centers <- data_frame(
+  long = c(seq(-71.11, -70.7, length.out = 3),
+           seq(-71.7, -70.6, length.out= 6),
+           seq(-71.43, -70.73, length.out = 4),
+           seq(-71.5, -70.8, length.out = 4),
+           seq(-71.43, -70.73, length.out = 4),
+           seq(-71.28, -70.53, length.out=4),
+           seq(-71.18, -70.58, length.out = 4),
+           seq(-71.1, -70.7, length.out =3)
+            ),
+  lat = c(rep(42.8, 3),
+          rep(42.62, 6),
+          rep(42.44, 4),
+          rep(42.25, 4),
+          rep(42.07, 4),
+          rep(41.89, 4),
+          rep(41.72, 4),
+          rep(41.53, 3)
+))
+
+circles <- data_frame(long = numeric(), lat = numeric(),
+                      group = integer())
+
+for (i in 1:nrow(search.centers)) {
+  long <- search.centers$long[i]
+  lat <- search.centers$lat[i]
+  radius <- 13 #km
+  circles %<>% bind_rows(makeCircle(long, lat, radius, i))
+}
+
+MAmap +
+  geom_point(data=search.centers, aes(x = long, y = lat),
+             color = 'red')  +
+  geom_polygon(data=circles, aes(x = long, y = lat, group=group),
+               color='red', fill = 'red', linetype='dotted',
+               alpha=0.2) +
+  labs(title = "Search Locations") +
+  theme_bw() +
+  coord_map()
+
+```
+
+
+Below is a map displaying the results of the radar searches. Dunkin' Donuts locations are demarcated with an orange dot and Starbucks locations with a green dot.   
+
+```{r, echo=FALSE, warning=FALSE, message = FALSE}
+#The following function was also adapted from the same student to put the locations in a data frame. To run it yourself, you'd need your own API key. 
+# A function to get nearby locations
+getLocations <- function(x, y, query, radius=10000) {
+  # Uses Google Places to find all locations near a place.
+  #
+  # Arguments:
+  #  x: the lattitude of the center from which to search
+  #  y: the longitude of the center from which to search
+  #  radius: the radius of the search, in meters
+  #  query: the name of the franchise to search for
+  # Returns:
+  #  A dataframe of locations.
+
+  # First, construct the query URL
+  gplaces.key <- readLines('Google_API_key.txt')
+  url <- 'https://maps.googleapis.com/maps/api/place/radarsearch/json?'
+  url %<>% paste('key=', gplaces.key, '&', sep='')
+  url %<>% paste('location=', as.character(x), ',',
+                 as.character(y), '&', sep='')
+  url %<>% paste('radius=', as.character(radius), '&', sep='')
+  query %<>% str_replace(' ', '+')
+  url %<>% paste('keyword=', query, sep='')
+
+  data <- url %>% getURL() %>% fromJSON()
+
+  if (data$status != "ZERO_RESULTS") {
+
+    data %<>% .$results %>% as.data.frame()
+
+    output <- data_frame(place_id = data$place_id,
+                         lat = data$geometry$location$lat,
+                         long = data$geometry$location$lng)
+    return(output)
+  } else {
+    return(data_frame(place_id = character(),
+                      lat = numeric(),
+                      long = numeric()))
+  }
+}
+
+#Testing code
+#testSB <- getLocations(42.8, -71.11, 'starbucks coffee')
+#testDD <- getLocations(42.8, -71.11, "dunkin' donuts")
+# DD1 <- getLocations(search.centers$lat[1], search.centers$long[1], "dunkin' donuts")
+# SB1 <- getLocations(search.centers$lat[1], search.centers$long[1], "starbucks coffee")
+
+# sb_locations <- data_frame(place_id = character(),
+#                         lat = numeric(),
+#                        long = numeric())
+
+#takes a long time to run, also requires a google places API, so I have saved
+#the data so that you can load it in instead of running it yourself
+
+# for (i in 1:32) {           #there are 32 rows in the dataframe
+#   new_sb_locations <- getLocations(search.centers$lat[i],
+#                                 search.centers$long[i],
+#                                 "starbucks coffee")
+#   sb_locations %<>% bind_rows(new_sb_locations)
+# }
+#
+# sb_locations_dist <- sb_locations %>%
+#   distinct()
+#
+# write.csv(sb_locations_dist, file='sbloc.csv')
+
+sbloc <- read.csv("./data/sbloc.csv")
+
+
+#Do the same for DD
+# dd_locations <- data_frame(place_id = character(),
+#                            lat = numeric(),
+#                            long = numeric())
+#
+# for (i in 1:32) {
+#   lat = search.centers$lat[i]
+#   long = search.centers$long[i]
+#   new_dd_locations <- getLocations(lat,
+#                                    long,
+#                                    "dunkin' donuts")
+#   dd_locations %<>% bind_rows(new_dd_locations)
+# }
+#
+# dd_locations_dist <- dd_locations %>%
+#   distinct()
+#
+# write.csv(dd_locations_dist, file='ddloc.csv')
+
+ddloc <- read.csv("./data/ddloc.csv")
+
+#SB locations
+sb_coord <- sbloc %>%
+  select(long, lat)
+sb_data <- sbloc %>%
+  select(place_id)
+CRS <- "+proj=longlat +datum=NAD83 +no_defs +ellps=GRS80 +towgs84=0,0,0 "
+sbloc_sp <- SpatialPointsDataFrame(sb_coord, sb_data, proj4string = CRS(CRS))
+
+map_with_sb <- point.in.poly(sbloc_sp, map_obj)
+map_with_sb_id <- merge(sbloc_sp, map_with_sb, by = "place_id")
+map_with_sb_id <- sp.na.omit(map_with_sb_id)
+
+
+#DD locations
+dd_coord <- ddloc %>%
+  select(long, lat)
+dd_data <- ddloc %>%
+  select(place_id)
+CRS <- "+proj=longlat +datum=NAD83 +no_defs +ellps=GRS80 +towgs84=0,0,0 "
+ddloc_sp <- SpatialPointsDataFrame(dd_coord, dd_data, proj4string = CRS(CRS))
+
+map_with_dd <- point.in.poly(ddloc_sp, map_obj)
+map_with_dd_id <- merge(ddloc_sp, map_with_dd, by = "place_id")
+map_with_dd_id <- sp.na.omit(map_with_dd_id)
+
+
+#Count DDs and SBs by census tract
+DDlist <- as.data.frame(map_with_dd_id) %>%
+  select(place_id, lat, long, GEOID) %>%
+  rename(dd_place_id = place_id,
+         dd_lat = lat,
+         dd_long = long) %>%
+  mutate(GEOID = as.factor(as.character(GEOID)))
+
+SBlist <- as.data.frame(map_with_sb_id) %>%
+  select(place_id, lat, long, GEOID) %>%
+  rename(sb_place_id = place_id,
+         sb_lat = lat,
+         sb_long = long) %>%
+  mutate(GEOID = as.factor(as.character(GEOID)))
+
+tracts_w_dd <- as.data.frame(map_obj) %>%
+  select(GEOID, NAMELSAD) %>%
+  left_join(DDlist, by = "GEOID") %>%
+  mutate(dd = ifelse(is.na(dd_place_id), 0, 1)) %>%
+  group_by(GEOID) %>%
+  summarise(numDD = sum(dd))
+
+tracts_w_sb <- as.data.frame(map_obj) %>%
+  select(GEOID, NAMELSAD) %>%
+  left_join(SBlist, by = "GEOID") %>%
+  mutate(sb = ifelse(is.na(sb_place_id), 0, 1)) %>%
+  group_by(GEOID) %>%
+  summarise(numSB = sum(sb))
+
+tracts_w_SBDD <- left_join(tracts_w_dd, tracts_w_sb, by = "GEOID")
+
+MAincomedata2 <- left_join(MAincomedata, tracts_w_SBDD, by = c ("Geo_FIPS" = "GEOID")) %>% 
+    mutate(sb_1000 = numSB * 1000 / total_population,
+         sb_1000 = ifelse(sb_1000 == Inf, NA, sb_1000),
+         sb_1000 = ifelse(total_population < 1000, NA, sb_1000),
+         dd_1000 = numDD * 1000 / total_population,
+         dd_1000 = ifelse(dd_1000 == Inf, NA, dd_1000),
+         dd_1000 = ifelse(total_population < 1000, NA, dd_1000))
+
+totals <- MAincomedata2 %>%
+  summarise(Starbucks_Count = sum(numSB),
+            DunkinDonuts_Count = sum(numDD))
+
+#Calculate franchises per 1000
+#There is one census tract with a very small population (480), but 5 Dunkin' Donuts
+#and 6 Starbucks...this seems like an anomaly. I am filtering out all tracts that
+#have fewer than 1000 people in them
+map_census2 <- left_join(map_census, tracts_w_SBDD, by = "GEOID") %>%
+  mutate(sb_1000 = numSB * 1000 / total_population,
+         sb_1000 = ifelse(sb_1000 == Inf, NA, sb_1000),
+         sb_1000 = ifelse(total_population < 1000, NA, sb_1000),
+         dd_1000 = numDD * 1000 / total_population,
+         dd_1000 = ifelse(dd_1000 == Inf, NA, dd_1000),
+         dd_1000 = ifelse(total_population < 1000, NA, dd_1000))
+
+
+#Plot DD and SB locations!
+# MAmap +
+#   geom_point(data = ddloc,
+#              aes(x = long, y = lat),
+#              color = 'orange',
+#              size = 1.5) +
+#   geom_point(data = sbloc,
+#              aes(x = long, y = lat),
+#              color = 'green',
+#              size = 1.5) +
+#   coord_map() +
+#   theme_bw() +
+#   labs(title = "Locations of Starbucks and Dunkin' Donuts in Eastern MA")
+MA1 +
+  geom_point(data = ddloc,
+             aes(x = long, y = lat, group = X),
+             color = 'darkorange',
+             size = 1.5) +
+  geom_point(data = sbloc,
+             aes(x = long, y = lat, group = X),
+             color = 'green',
+             size = 1.5) +
+  labs(title = "Locations of Starbucks and Dunkin' Donuts in Eastern MA")
+
+totals2 <- totals %>% 
+  rename(Starbucks = Starbucks_Count,
+         DunkinDonuts = DunkinDonuts_Count) %>% 
+  gather(totals)
+
+knitr::kable(totals2, col.names = c("Franchise", "Count"))
+```
+
+As is evident in both the map and the above tables, there are almost fourfold the number of Dunkin' Donuts as Starbucks locations in eastern MA. 
+
+###Spatial Distribution Analysis
+
+In order to test the hypothesis that the two franchises cater to different populations, and thus have different distribution patterns, it is useful to graph the densities of one against the other. 
+
+```{r, echo= FALSE}
+MAincomedata2 <- MAincomedata2 %>% 
+  mutate(SB_Density = sb_1000, 
+         DD_Density = dd_1000)
+
+scatterplot <- ggplot(MAincomedata2, aes(x = DD_Density, y = SB_Density, color = County)) +
+  geom_jitter(aes(text = paste(Geo_NAME,  "<br>",
+                                 "Population:", total_population, "<br>",
+                                 "Median Income:", med_inc))) +
+  xlab("Dunkin' Donuts per 1000 people") +
+  ylab("Starbucks per 1000 people") +
+  ggtitle("Comparing Starbucks and Dunkin' Donuts Distributions")
+ggplotly(scatterplot)
+
+```
+
+
+Each dot represents a census tract, with the x value carrying information about Dunkin Donuts density in that tract and the y value carrying information about Starbucks density.  A positive trend would indicate that both franchises pick locations in the same areas, while a negative trend would indicate that their distributions do not overlap. Here, there is a net positive trend, which makes sense; in areas with more development, we would expect more of both franchises. Additionally, certain trendlines appear of common ratios of the two franchises.
+
+To examine the differences between the two distributions, we need to look at the data more closely. The first variable I looked at was city vs. subarbs, where Suffolk County was classified as Boston, proper, and all of the other counties were considered suburbs. When the data is split like this, an interesting trend emerges. The following graph shows the franchise densities of Starbucks and Dunkin' Donuts in the city vs. the subarbs.  
+
+```{r, echo= FALSE, warning=FALSE}
+city_descript <- MAincomedata2 %>% 
+  mutate(cityproper = ifelse(County == "Suffolk", 1, 0)) %>% 
+  filter(!is.na(dd_1000), !is.na(sb_1000)) %>% 
+  group_by(cityproper) %>% 
+  summarise(ddrate = mean(dd_1000),
+            ddsd = round(sd(dd_1000), 3), 
+            sbrate = mean(sb_1000),
+            sbsd = round(sd(sb_1000), 3)) 
+
+city_descript2 <- gather(city_descript, "Franchise", "Density", ends_with("rate")) %>% 
+  mutate(Region = ifelse(cityproper == 0, "Suburbs", "Boston"), 
+         Franchise = ifelse(Franchise == "ddrate", "Dunkin_Donuts", "Starbucks")) %>% 
+  mutate(stdev = ifelse(Franchise == "Dunkin_Donuts", ddsd, sbsd)) %>% 
+  select(-sbsd, -ddsd)
+
+densities <- ggplot(city_descript2, aes(x = Region, y = Density, fill = Franchise)) +
+  geom_bar(aes(text = paste("Standard Deviation", stdev)), stat = "identity", position = "dodge") +
+  scale_fill_manual(values = c("#e6550d", "#006d2c")) +
+  ylab("Franchises per 1000 people") +
+  xlab(NULL) +
+  ggtitle("City vs. Suburb Franchise Density")
+ggplotly(densities)
+```
+
+It is evident that the absolute number of Dunkin' Donuts in both the city and the subarbs is higher than that of Starbucks. However. Interestingly, there are more Dunkin' Donuts per 1000 people in the suburbs than the city, while there are fewer Starbucks per 1000 people in the subarbs than the city. 
+The following ANOVA output shows that there is, in fact, a statistically significant interaction effect between Franchise and region (city vs. suburbs). F = 4.462, p = 0.0348.
+```{r, echo= FALSE, warning=FALSE}
+city_descript1 <- MAincomedata2 %>%  
+  mutate(cityproper = ifelse(County == "Suffolk", 1, 0)) %>% 
+  select(Geo_FIPS, dd_1000, sb_1000, cityproper) %>% 
+  filter(!is.na(dd_1000), !is.na(sb_1000))
+city_descript1 <- gather(city_descript1, "Franchise", "Density", ends_with("1000")) %>% 
+  mutate(Franchise = ifelse(Franchise == "dd_1000", 
+                            "Dunkin_Donuts", "Starbucks"))
+
+Fran_reg <- aov(city_descript1$Density ~ city_descript1$Franchise*city_descript1$cityproper)
+summary(Fran_reg)
+```
+
+
+The following plot encapsulates this phenomenon. Deviations from the line y = 0 represent relative differences in the franchise densities in the suburbs relative to Boston.
+
+```{r, echo= FALSE, warning=FALSE}
+percentchange <- city_descript %>% 
+  summarise(Dunkin_Donuts = (first(ddrate) - last(ddrate))/first(ddrate), 
+            Starbucks = (first(sbrate) - last(sbrate))/first(sbrate)) %>% 
+  gather("Franchise", "Percent_Change", c(Dunkin_Donuts, Starbucks)) %>% 
+  mutate(Percent_Change = Percent_Change*100)
+
+
+ggplot(percentchange, aes(x = Franchise, y = Percent_Change, fill = Franchise)) +
+  geom_bar(stat = "identity") +
+  scale_fill_manual(values = c("#e6550d", "#006d2c")) +
+  ylab("Percent Difference") +
+  geom_hline(yintercept = 0) +
+  ggtitle("Percent Difference in Franchise Density in Boston vs. the Suburbs")
+
+
+
+
+city_descript2 <- city_descript2[, c(2, 4, 3, 5)]
+
+knitr::kable(city_descript2)
+
+
+knitr::kable(percentchange)
+
+```
+
+I wanted to make this using plotly (instead of the ancillary tables), but there is a documented bug where plotly renders negative ggplot bar graphs positive, which takes away the main message of the graph.
+
+
+
+
+#####Distributions by County
+
+The distribution of Starbucks and Dunkin' Donuts can be further explored by breaking up the "Suburbs" category. The below plot shows the densities of Dunkin' Donuts and Starbucks by county. Again, we see that the densities of one franchise does not predict the other. In fact, there almost appears to be an inverse trend. 
+Additionally, average median income for each county is displayed as a point (scaled down by a factor 10^-6). 
+```{r, echo= FALSE, warning=FALSE}
+region <- MAincomedata2 %>% 
+  filter(!is.na(dd_1000), !is.na(sb_1000)) %>% 
+  group_by(County) %>% 
+  summarise(DD = mean(dd_1000),
+            SB = mean(sb_1000))
+
+
+region2 <- region %>%  gather("Franchise", "Density", 2:3) 
+
+region3 <- region2 %>% 
+  mutate(level = ifelse(County == "Bristol", 1, 
+                  ifelse(County == "Essex", 3,
+                  ifelse(County == "Middlesex", 6,
+                  ifelse(County == "Norfolk", 4,
+                  ifelse(County == "Plymouth", 2,
+                  ifelse(County == "Suffolk", 5, NA)))))))
+
+incomes2 <- incomes %>% 
+  mutate(scaled_income = Avg_Median_Income/1000000) %>% 
+  mutate(Avg_Median_Income = signif(Avg_Median_Income, 3))
+
+countybreakdown <- ggplot()+
+  geom_bar(data = region3, aes(x = (reorder(County, level)), y = Density, 
+                        fill = Franchise), stat = "identity", position = "dodge") +
+  scale_fill_manual(values = c("#e6550d", "#006d2c", "blue")) +
+  ggtitle("Franchise Densities by County") +
+  ylab("Franchises per 1000 people") +
+  xlab("County") +
+  geom_point(data = incomes2, aes(x = County, y = scaled_income, 
+            text = paste("Average Median Income:", Avg_Median_Income)), 
+            show.legend = TRUE, color = "#636363", size = 3)
+ggplotly(countybreakdown)
+
+```
+
+
+A two-way between-groups ANOVA showed that the interaction between franchise and county is statiscally significant. F = 5.574, p 0.0000416. See the output below. 
+```{r, echo= FALSE, warning=FALSE}
+county_data <- MAincomedata2 %>% 
+  select(Geo_FIPS, dd_1000, sb_1000, County) %>% 
+  filter(!is.na(dd_1000), !is.na(sb_1000))
+county_data <- gather(county_data, "Franchise", "Density", ends_with("1000")) %>% 
+  mutate(Franchise = ifelse(Franchise == "dd_1000", 
+                            "Dunkin_Donuts", "Starbucks"))
+
+county_franchise <- aov(county_data$Density ~ county_data$Franchise*county_data$County)
+summary(county_franchise)
+```
+
+
+
+
+
+###Economic Distribution Analysis
+
+The next research question was whether the franchise distributions are related to income.
+
+In order to test this, I performed linear regressions using median income as the predictor variable of Dunkin' Donuts and Starbucks densities on the census tract level. The tables below show the resulting coefficients of the regressions, as well as visualizations. 
+
+
+#####Starbucks
+
+```{r, echo= FALSE, warning=FALSE}
+inc_data <- MAincomedata2 %>% 
+  select(Geo_FIPS, dd_1000, sb_1000, med_inc) %>% 
+  filter(!is.na(dd_1000), !is.na(sb_1000))
+inc_data <- gather(inc_data, "Franchise", "Density", ends_with("1000")) %>% 
+  mutate(Franchise = ifelse(Franchise == "dd_1000", 
+                            "Dunkin_Donuts", "Starbucks"))
+
+dd_data2 <- filter(inc_data, Franchise == "Dunkin_Donuts")
+dd_inc <- lm(Density ~ med_inc, data = dd_data2)
+ddinccoefs <-coefficients(dd_inc)
+
+sb_data2 <- filter(inc_data, Franchise == "Starbucks")
+sb_inc <- lm(Density ~ med_inc, data = sb_data2)
+sbinccoefs <- coefficients(sb_inc)
+
+
+
+knitr::kable(summary(sb_inc)$coef)
+
+ggplot(sb_data2, aes(x = med_inc, y = Density)) +
+  geom_point() +
+  geom_abline(slope = sbinccoefs[2], intercept = sbinccoefs[1], col = "darkgreen", size = 1.5) +
+  xlab("Median Income") +
+  ylab("Franchise Density")+
+  ggtitle("Starbucks Density by Median Income")
+
+```
+
+
+
+#####Dunkin' Donuts
+```{r, echo= FALSE, warning=FALSE}
+knitr::kable(summary(dd_inc)$coef)
+
+ggplot(dd_data2, aes(x = med_inc, y = Density)) +
+  geom_point() +
+  geom_abline(slope = ddinccoefs[2], intercept = ddinccoefs[1], col = "darkorange", size =1.5) +
+  xlab("Median Income") +
+  ylab("Franchise Density")+
+  ggtitle("Dunkin' Donuts Density by Median Income")
+```
+
+A linear regression revealed that median income did significantly predict Starbucks densities, such that census tracts with higher median incomes had more Starbucks. This was subtle (a very small slope), but nonetheless significant (p = 0.0017). For Dunkin' Donuts, the relationship was only marginally significant (p = 0.0660), and equally subtle, but, interestingly, of opposite magnitude! In census tracts with higher median incomes, there were actually fewer Dunkin' Donuts.
+
+###Conclusion
+Overall, Starbucks and Dunkin' Donuts do have different distributions and appear to cater to different clientele, both spatially and economically. Starbucks are more densely distributed in cities and located in areas with higher median incomes. Dunkin' Donuts are more densely distributed in the suburbs, and located in areas with lower median incomes.
+
+It is important to note, however, that this analysis only applied to the counties comprising and surrounding Boston. It would be interesting to explore whether the same trends apply throughout the state. An analysis of major coffeehouse franchises on a national scale would also be very interesting. Dunkin' Donuts is not uniformly spread throughout the country; rather it clusters in the northeast. The main coffee-chain competitors of Starbucks in other regions, must be different. 
+
+
+###References
+
+ACS 2014 (5-Year Estimates). Rep. New York City, NY: Social Explorer, 2016. <http://old.socialexplorer.com/pub/reportdata/HtmlResults.aspx?reportid=R11178485>.
+
+CIEEDAC. "Market Share of The Leading Coffee Chains in The United States in 2014." *Statista - The Statistics Portal.* Statista. March 2015. Web. 12 May 2016. <http://www.statista.com/statistics/250166/market-share-of-major-us-coffee-shops/>.
+
+Dunkin Donuts. "Dunkin' Donuts." *Dunkin' Donuts.* DD IP Holder LLC and BR IP Holder LLC, 2014. Web. 23 May 2016.
+
+Dunkin' Donuts. "Number of Dunkin' Donuts Stores Worldwide from 2007 to 2015, 
+by Region." _Statista - The Statistics Portal._ Statista. February 2016. Web. 6 Apr 2016. <http://www.statista.com/statistics/291462/distribution-points-dunkin--donuts/>.
+
+Dunkin' Donuts. "Revenue of Dunkin' Brands Worldwide from 2007 to 2015 (in Million U.S. Dollars)." _Statista - The Statistics Portal._ Statista. February 2016. Web. 12 May 2016. <http://www.statista.com/statistics/291392/annual-revenue-dunkin--brands/>. 
+
+"Dunkin' Donuts Prices - Fast Food Menu Prices." _Fast Food Menu Prices._ Fast Food Menu Prices, 2016. Web. 23 May 2016. <http://www.fastfoodmenuprices.com/dunkin-donuts-prices/>. 
+
+IBISWorld. "Revenue of The Coffee and Snack Shops Industry in The United States from 2002 to 2016 (in Billion U.S. Dollars)*." _Statista - The Statistics Portal._ Statista. February 2011. Web. 12 May 2016. <http://www.statista.com/statistics/196570/revenue-of-the-us-coffee-and-snack-shops-industry-since-2002/>. 
+
+ICO. "Coffee Consumption Worldwide from 2009 to 2014 (in Million Bags)." _Statista - The Statistics Portal._ Statista. January 2016. Web. 12 May 2016. <http://www.statista.com/statistics/292595/global-coffee-consumption/>.
+
+Millward Brown. "Brand Value of The 10 Most Valuable Fast Food Brands Worldwide in 2015 (in Million U.S. Dollars)." _Statista - The Statistics Portal._ Statista. May 2015. Web. 12 May 2016. <http://www.statista.com/statistics/273057/value-of-the-most-valuable-fast-food-brands-worldwide/?itemsPerPage=25&q=>.
+
+Starbucks. "Company Information." _Starbucks Coffee Company._ Starbucks Corporation, 2016. Web. 12 May 2016.<http://www.starbucks.com/about-us/company-information>.
+
+Starbucks. "Number of Starbucks Stores Worldwide from 2003 to 2015." _Statista – 
+The Statistics Portal._ Statista. November 2015. Web. 6 Apr 2016. <http://www.statista.com/statistics/266465/number-of-starbucks-stores-worldwide/>.
+
+Starbucks. "Revenue of Starbucks Worldwide from 2003 to 2015 (in Billion U.S. Dollars)." _Statista - The Statistics Portal._ Statista. November 2015. Web. 12 May 2016. <http://www.statista.com/statistics/266466/net-revenue-of-the-starbucks-corporation-worldwide/>. 
+
+"Starbucks Prices - Fast Food Menu Prices." Fast Food Menu Prices. Fast Food Menu Prices, 2016. Web. 23 May 2016. <http://www.fastfoodmenuprices.com/starbucks-prices/>.
+
+"William Rosenberg, 86, Founder of Dunkin' Donuts." _NYTimes._ The New York Times Company, 23 Sept. 2002. Web. 09 May 2016.  <http://www.nytimes.com/2002/09/23/business/william-rosenberg-86-founder-of-dunkin-donuts.html>.
+
+Also the analysis of Starbucks densities in LA by wjones127 found [here](https://github.com/wjones127/franchise-densities) was also of tremendous help. 
+
